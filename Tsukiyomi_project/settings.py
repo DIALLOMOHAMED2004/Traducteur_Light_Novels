@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-bjm=6nk=8)ef)x+o-4(1=_@#^qwa$q7=v7$fagqkj)6df=f_do
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['10.82.247.5','127.0.0.1']
+ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -78,9 +78,9 @@ WSGI_APPLICATION = 'Tsukiyomi_project.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'TSUKIYOMI_DB',
-        'USER': 'Pavillon 15n_266sa',
-        'PASSWORD': 'psqlzen2025',
+        'NAME': 'nom_base_de_donnees',
+        'USER': 'utilisateur',
+        'PASSWORD': '',
         'HOST': '127.0.0.1',
         'PORT': '5432',
 

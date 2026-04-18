@@ -23,6 +23,8 @@ NB: Python et PostgreSQL doivent être installés
 
 ## Enjoy :)
 
+<i>NB: n'oubliez pas de modifier et configurer les informations de votre base de donnees dans le fichier de configuration (settings.py)</i>
+
 [Img illustration](folder_img/tsukiyomi.PNG)
 
 <img src="folder_img\tsukiyomi.PNG" alt="logo" widht="400" height="200">
