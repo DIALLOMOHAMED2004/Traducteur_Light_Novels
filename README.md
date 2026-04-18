@@ -1,6 +1,6 @@
 # Tsukiyomi003 bY zEnIa
 
-<img src="folder_img\tsuki2.png" alt="logo" widht="200" height="100">
+<img src="folder_img/tsuki2.png" alt="logo" widht="200" height="100">
 
 <h1>[Application WEB pour la traduction de tes documents , image au format png et jpg ]</h1>
 
@@ -27,7 +27,7 @@ NB: Python et PostgreSQL doivent être installés
 
 [Img illustration](folder_img/tsukiyomi.PNG)
 
-<img src="folder_img\tsukiyomi.PNG" alt="logo" widht="400" height="200">
+<img src="folder_img/tsukiyomi.PNG" alt="logo" widht="400" height="200">
 
 
 
