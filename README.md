@@ -20,6 +20,8 @@ NB: Python et PostgreSQL doivent être installés
 
 ## Enjoy :)
 
+[Img illustration](folder_img/tsukiyomi.PNG)
+
 
 
 
