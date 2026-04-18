@@ -1,0 +1,525 @@
+{% extends 'base_app.html' %}
+{% load static %}
+{% block app_bloc %}
+
+            <main class="main" id="top">
+            <nav class="navbar navbar-expand-lg navbar-light fixed-top py-3 d-block" data-navbar-on-scroll="data-navbar-on-scroll">
+              <div class="container"><a class="navbar-brand" href="{% url 'reindex' %}"><img src="{% static 'assets/img/gallery/tsuki.png' %}" width="118" alt="logo" /></a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"> </span></button>
+                <div class="collapse navbar-collapse border-top border-lg-0 mt-4 mt-lg-0" id="navbarSupportedContent">
+                  <ul class="navbar-nav ms-auto pt-2 pt-lg-0 font-base">
+                    <li class="nav-item px-2"><a class="nav-link" aria-current="page" href="#about" style="color: rgb(111, 57, 11);">A Propos</a></li>
+                    <li class="nav-item px-2"><a class="nav-link" href="#langue" style="color: rgb(111, 57, 11);">Langues</a></li>
+                    <li class="nav-item px-2"><a class="nav-link" href="#equipe" style="color: rgb(111, 57, 11);">Equipes</a></li>
+                    <li class="nav-item px-2"><a class="nav-link" href="#autre" style="color: rgb(111, 57, 11);">Autres services </a></li>
+                    <li class="nav-item px-2"><a class="nav-link" href="#clic" style="color: rgb(111, 57, 11);">En savoir plus</a></li>
+                    </ul><a class="btn btn-sm rounded-pill order-1 order-lg-0 ms-lg-4" style="background-color: rgb(255, 255, 255);border-color: rgb(111, 57, 11); color: rgb(111, 57, 11);" href=""><img  src="{% static 'assets/img/gallery/point_online.png' %}" style=" margin-right: 8px;width: 15px;animation: zoomIn 1s ease-in-out forwards;">En ligne : {{user}}</a>
+                  </ul><a class="btn btn-sm btn-outline rounded-pill order-1 order-lg-0 ms-lg-4" style="background-color: rgb(255, 255, 255);border-color: rgb(111, 57, 11); color: rgb(111, 57, 11);" href="{% url 'deco' %}">Deconnexion</a>
+                </div>
+              </div>
+            </nav>
+            <section class="py-xxl-10 pb-0" id="home">
+              <div class="bg-holder bg-size" style="background-image:url('{% static "assets/img/gallery/tsu-bg2.png" %}'); background-position:top;center;background-size:cover;">
+              </div>
+              <!--/.bg-holder-->
+
+              <div class="container">
+                <div class="row min-vh-xl-100 min-vh-xxl-25">
+                  <div class="col-md-5 col-xl-6 col-xxl-7 order-0 order-md-1 text-end"><img class="pt-7 pt-md-0 w-100" src="{% static 'assets/img/gallery/tsuki.png' %}" style="animation: zoomIn 1s ease-in-out forwards;" alt="hero-header" /></div>
+                  <div class="col-md-75 col-xl-6 col-xxl-5 text-md-start text-center py-6">
+                    <h1 class="fw-light font-base fs-6 fs-xxl-7" style="animation: zoomIn 2s ease-in-out forwards  ;color: rgb(111, 57, 11); background-color: rgb(250, 250, 250); opacity: 0.92;">La solution<strong> qui facilite les traductions </strong>de tes documents<br />grace&nbsp;<strong>au pouvoir de l'Oeil Numérique.</strong></h1>
+                    <p class="btn btn-lg btn-primary rounded-pill" style="animation: zoomIn 2s ease-in-out forwards;opacity: 0.88;background-color: rgb(111, 57, 11); border-color: antiquewhite;">Plateforme qui tranforme des Documents, Contenus d'images –de langues étrangères <br />en Français. Services accessibles 24/7. </p><a class="btn btn-lg btn-primary rounded-pill" href="{% url 'televerse_url' %}" style="background-color: rgb(111, 57, 11); border-color: antiquewhite; opacity: 0.88;" href="#!" role="button">Commence ici</a>
+                    {% if user.is_superuser %}
+                       <a class="btn btn-lg btn-primary rounded-pill" href="{% url 'clear_media_name' %}" style="background-color: rgb(111, 57, 11); border-color: antiquewhite; opacity: 0.88;" role="button">rôle admin --> éffacer le dossier media upload</a>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+            </section>
+
+
+            <!-- ============================================-->
+            <!-- <section> begin ============================-->
+            <section class="py-5" id="langue">
+
+              <div class="container rounded-3" style="background-image:url('{% static "assets/img/gallery/tsu-bg.png" %}'); ">
+                <div class="row" >
+                  <div class="col-12 py-3">
+                    <div class="bg-holder bg-size" >
+                    </div>
+                    <!--/.bg-holder-->
+
+                    <h2 class="text-center" style="color: rgb(111, 57, 11); opacity: 0.92;">Les Langues prises en compte</h2>
+                  </div>
+                </div>
+              </div>
+              <!-- end of .container-->
+
+            </section>
+            <!-- <section> close ============================-->
+            <!-- ============================================-->
+
+
+
+
+            <!-- ============================================-->
+            <!-- <section> begin ============================-->
+            <section class="py-0">
+
+              <div class="container">
+                <div class="row py-5 align-items-center justify-content-center justify-content-lg-evenly">
+                  <div class="col-auto col-md-4 col-lg-auto text-xl-start">
+                    <div class="d-flex flex-column align-items-center">
+                      <div class="icon-box text-center"><a class="text-decoration-none" href="#!"><img class="mb-3 deparment-icon" src="{% static 'assets/img/icons/cardiac.png' %}" alt="..." />
+                          
+                        </a></div>
+                    </div>
+                  </div>
+                  <div class="col-auto col-md-4 col-lg-auto text-xl-start">
+                    <div class="d-flex flex-column align-items-center">
+                      <div class="icon-box text-center"><a class="text-decoration-none" href="#!"><img class="mb-3 deparment-icon" src="{% static 'assets/img/icons/ent.png' %}" alt="..." />
+                          
+                        </a></div>
+                    </div>
+                  </div>
+                  <div class="col-auto col-md-4 col-lg-auto text-xl-start">
+                    <div class="d-flex flex-column align-items-center">
+                      <div class="icon-box text-center"><a class="text-decoration-none" href="#!"><img class="mb-3 deparment-icon" src="{% static 'assets/img/icons/eye-care.png' %}" alt="..." />
+                          
+                        </a></div>
+                    </div>
+                  </div>
+                  <div class="col-auto col-md-4 col-lg-auto text-xl-start">
+                    <div class="d-flex flex-column align-items-center">
+                      <div class="icon-box text-center"><a class="text-decoration-none" href="#!"><img class="mb-3 deparment-icon" src="{% static 'assets/img/icons/heart.png' %}" alt="..." />
+                          
+                        </a></div>
+                    </div>
+                  </div>
+                  <div class="col-auto col-md-4 col-lg-auto text-xl-start">
+                    <div class="d-flex flex-column align-items-center">
+                      <div class="icon-box text-center"><a class="text-decoration-none" href="#!"><img class="mb-3 deparment-icon" src="{% static 'assets/img/icons/neurology.png' %}" alt="..." />
+                          
+                        </a></div>
+                    </div>
+                  </div>
+                  <div class="col-auto col-md-4 col-lg-auto text-xl-start">
+                    <div class="d-flex flex-column align-items-center">
+                      <div class="icon-box text-center"><a class="text-decoration-none" href="#!"><img class="mb-3 deparment-icon" src="{% static 'assets/img/icons/osteoporosis.png' %}" alt="..." />
+                        
+                        </a></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <!-- end of .container-->
+
+            </section>
+            <!-- <section> close ============================-->
+            <!-- ============================================-->
+
+
+            <section class="" style="background-color: aliceblue;">
+              <div class="bg-holder" style="background-image:url('{% static "assets/img/gallery/tsu-bg2.png" %}'); "; background-position:center;background-size:contain;">
+              </div>
+              <!--/.bg-holder-->
+
+              <div class="container">
+                <div class="row align-items-center">
+                  <div class="col-md-5 col-xxl-6"><img class="img-fluid my_image_hover" id="animatedImage" onclick="animateClick" src="{% static 'assets/img/gallery/kid.png' %}"  /></div>
+                  <div class="col-md-7 col-xxl-6 text-center text-md-start">
+                      <hr style="color: rgb(111, 57, 11);">
+                      <hr style="color: rgb(111, 57, 11);">
+                    <h2 class="fw-bold  mb-4 mt-4 mt-lg-0" style="color: rgb(111, 57, 11); opacity: 0.88;">POURQUOI UTILISER TSUKIYOMI ?<br class="d-none d-sm-block" />.</h2>
+                    <p class="btn btn-lg btn-primary rounded" style="opacity: 0.88;background-color: rgb(111, 57, 11); border-color: antiquewhite;">.<br class="d-none d-sm-block" />
+                      Elle est essentielle pour convertir des documents physiques
+                      (PDF, Images, Scans, Captures d'écran) en texte numérique modifiable, 
+                      consultable et exploitable automatiquement<br class="d-none d-sm-block" />
+                      Souhaitez-vous traduire directement ces documents converties en texte numérique ? 
+                      oui c'est désormais possible de le faire grace à notre solution. Tu gagnes ainsi en temps et en efficacité, tu évites la saisie manuelle fastidieuse
+                      , tu traites des centaines de documents en quelques minutes seulement, TSUKIYOMI facilite également l'accès des documents aux personnes malvoyantes
+                  elle facilite la lecture audio et automatique et tu peux l'aborder pour corriger, annoter ou réutiliser du contenu. </p>
+                    <div class="py-3"><a class="btn btn-lg btn-light rounded-pill" style="border-color: rgb(111, 57, 11);" href="#!" role="button"><hr> Des cas d'usages concrets <hr>
+                  -Numérisation de dossiers médicaux ou administratifs<br>-Traduction, lecture et traitement des Romans, Light-novels 
+                  non accessibles en français<br>-Extraction de données de reçus, 
+                  factures, bulletins scolaires<br>-La traduction automatique de tout type de document innacessible en français</a></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+
+            <!-- ============================================-->
+            <!-- <section> begin ============================-->
+            <section class="pb-0" id="about">
+
+              <div class="container">
+                <div class="row">
+                  <div class="col-12 py-3">
+                    <div class="bg-holder bg-size" style="background-position:top center;background-size:contain;">
+                    </div>
+                    <!--/.bg-holder-->
+
+                    <hr><h1 class="text-center" style="color: rgb(248, 247, 246);"><img class="fit-cover rounded-circle w-100" src="{% static 'assets/img/gallery/apropos.png' %}" alt="..." /></h1><hr>
+                  </div>
+                </div>
+              </div>
+              <!-- end of .container-->
+
+            </section>
+            <!-- <section> close ============================-->
+            <!-- ============================================-->
+
+
+            <section class="py-5">
+              <div class="bg-holder bg-size" style="background-image:url('{% static "assets/img/gallery/about-bg.png" %}'); background-position:top center;background-size:contain;">
+              </div>
+              <!--/.bg-holder-->
+
+              <div class="container" id="clic">
+                <div class="row align-items-center">
+                  <div class="col-md-6 order-lg-1 mb-5 mb-lg-0"><img class="fit-cover rounded-circle w-100" src="{% static 'assets/img/gallery/ecosys.png' %}" alt="..." /></div>
+                  <div class="col-md-6 text-center text-md-start">
+                    <h2 class="fw-bold mb-4" style="color: aliceblue; opacity: 0.92;">Zenia Engine est une Start-up qui met sur pieds <br class="d-none d-sm-block" />des solutions clientes informatiques basées autour de l'écosystèmes ZENIA.</h2>
+                    <p style="color: white; opacity: 0.8;">Nous excellons dans divers domaines<br class="d-none d-sm-block" />Technologiques. <br class="d-none d-sm-block" />Allant de la vente des supports informatiques pilotés par (By Zenia), 
+                      aux prestations de services informatiques pilotés par (Zenia Engine) et aux formations Informatiques pilotés par (Zenia Academy).<br class="d-none d-sm-block" />Nous existons - et alimentons les joies de la clientèle grace 
+                      à nos solutions sur mesure informatiques.<hr> </p>
+                    <div class="py-3">
+                      <a  class="btn btn-lg btn-outline-primary rounded-pill" style="border-color: rgb(255, 255, 255); color: rgb(255, 255, 255);" href="https://wa.me/237651701750" type="submit">Cliquez ici pour en savoir plus ...</a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+
+
+
+            <section class="py-5" id="equipe">
+              <div class="bg-holder bg-size" style="background-image:url('{% static "assets/img/gallery/tsu-bg2.png" %}'); "; background-position:center;background-size:contain;">
+              </div>>
+              </div>
+              <!--/.bg-holder-->
+
+              <div class="container">
+                <div class="row flex-center">
+                  <h1 class="text-center rounded" style="color: rgb(240, 240, 240); opacity: 0.9; background-color: rgb(111, 57, 11);">Notre Equipe</h1>
+                  <div class="col-xl-10 px-0">
+                    <div class="carousel slide" id="carouselExampleDark" data-bs-ride="carousel"><a class="carousel-control-prev carousel-icon z-index-2" href="#carouselExampleDark" role="button" data-bs-slide="prev"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span></a><a class="carousel-control-next carousel-icon z-index-2" href="#carouselExampleDark" role="button" data-bs-slide="next"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span></a>
+                      <div class="carousel-inner">
+                        <div class="carousel-item active" data-bs-interval="10000">
+                          <div class="row h-100 m-lg-7 mx-3 mt-6 mx-md-4 my-md-7">
+                            <div class="col-md-4 mb-8 mb-md-0">
+                              
+                  
+                              <div class="card card-span h-100 shadow">
+                                <div class="card-body d-flex flex-column flex-center py-5"><img src="{% static 'assets/img/gallery/profil.png' %}" width="128" alt="..." />
+                                  <h5 class="mt-3" style="color: rgb(111, 57, 11);">EMANI NOGO Daryl</h5>
+                                  <p class="mb-0 fs-xxl-1" style="color: rgb(111, 57, 11);">Developpeur Backend</p>
+                                  <p class="text-600 mb-0" style="color: rgb(111, 57, 11);">Yaounde | Cameroun</p>
+                                  <p class="text-600 mb-4" style="color: rgb(111, 57, 11);">05 ans d'expérience</p>
+                                  <div class="text-center">
+                                    <button class=" hover-top rounded-pill border-1" style="border-color: rgb(111, 57, 11);background-color: rgb(240, 240, 240); color: rgb(111, 57, 11);" type="submit">Fondateur Ecosystème ZENIA</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="col-md-4 mb-8 mb-md-0">
+                              <div class="card card-span h-100 shadow">
+                                <div class="card-body d-flex flex-column flex-center py-5"><img src="{% static 'assets/img/gallery/profil.png' %}" width="128" alt="..." />
+                                  <h5 class="mt-3" style="color: rgb(111, 57, 11);">EMANI NOGO Daryl</h5>
+                                  <p class="mb-0 fs-xxl-1" style="color: rgb(111, 57, 11);">Developpeur Frontend</p>
+                                  <p class="text-600 mb-0" style="color: rgb(111, 57, 11);">Yaounde | Cameroun</p>
+                                  <p class="text-600 mb-4" style="color: rgb(111, 57, 11);">02 ans d'expérience</p>
+                                  <div class="text-center">
+                                    <button class=" hover-top rounded-pill border-1" style="border-color: rgb(111, 57, 11);background-color: rgb(240, 240, 240); color: rgb(111, 57, 11);"type="submit">Fondateur Ecosystème ZENIA</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="col-md-4 mb-8 mb-md-0">
+                              <div class="card card-span h-100 shadow">
+                                <div class="card-body d-flex flex-column flex-center py-5"><img src="{% static 'assets/img/gallery/profil.png' %}" width="128" alt="..." />
+                                  <h5 class="mt-3" style="color: rgb(111, 57, 11);">EMANI NOGO Daryl</h5>
+                                  <p class="mb-0 fs-xxl-1" style="color: rgb(111, 57, 11);">Designer</p>
+                                  <p class="text-600 mb-0" style="color: rgb(111, 57, 11);">Yaounde | Cameroun</p>
+                                  <p class="text-600 mb-4" style="color: rgb(111, 57, 11);">01 ans d'expérience</p>
+                                  <div class="text-center">
+                                    <button class=" hover-top rounded-pill border-1" style="border-color: rgb(111, 57, 11);background-color: rgb(240, 240, 240); color: rgb(111, 57, 11);"type="submit">Fondateur Ecosystème ZENIA</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="carousel-item" data-bs-interval="2000">
+                          <div class="row h-100 m-lg-7 mx-3 mt-6 mx-md-4 my-md-7">
+                            <div class="col-md-4 mb-8 mb-md-0">
+                              <div class="card card-span h-100 shadow">
+                                <div class="card-body d-flex flex-column flex-center py-5"><img src="{% static 'assets/img/gallery/profil.png' %}" width="128" alt="..." />
+                                  <h5 class="mt-3" style="color: rgb(111, 57, 11);">EMANI NOGO Daryl</h5>
+                                  <p class="mb-0 fs-xxl-1" style="color: rgb(111, 57, 11);">Developpeur Backend</p>
+                                  <p class="text-600 mb-0" style="color: rgb(111, 57, 11);">Yaounde | Cameroun</p>
+                                  <p class="text-600 mb-4" style="color: rgb(111, 57, 11);">05 ans d'expérience</p>
+                                  <div class="text-center">
+                                    <button class=" hover-top rounded-pill border-1" style="border-color: rgb(111, 57, 11);background-color: rgb(240, 240, 240); color: rgb(111, 57, 11);" type="submit">Fondateur Ecosystème ZENIA</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="col-md-4 mb-8 mb-md-0">
+                              <div class="card card-span h-100 shadow">
+                                <div class="card-body d-flex flex-column flex-center py-5"><img src="{% static 'assets/img/gallery/profil.png' %}" width="128" alt="..." />
+                                  <h5 class="mt-3" style="color: rgb(111, 57, 11);">EMANI NOGO Daryl</h5>
+                                  <p class="mb-0 fs-xxl-1" style="color: rgb(111, 57, 11);">Developpeur Frontend</p>
+                                  <p class="text-600 mb-0" style="color: rgb(111, 57, 11);">Yaounde | Cameroun</p>
+                                  <p class="text-600 mb-4" style="color: rgb(111, 57, 11);">02 ans d'expérience</p>
+                                  <div class="text-center">
+                                    <button class=" hover-top rounded-pill border-1" style="border-color: rgb(111, 57, 11);background-color: rgb(240, 240, 240); color: rgb(111, 57, 11);" type="submit">Fondateur Ecosystème ZENIA</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="col-md-4 mb-8 mb-md-0">
+                              <div class="card card-span h-100 shadow">
+                                <div class="card-body d-flex flex-column flex-center py-5"><img src="{% static 'assets/img/gallery/profil.png' %}" width="128" alt="..." />
+                                  <h5 class="mt-3" style="color: rgb(111, 57, 11);">EMANI NOGO Daryl</h5>
+                                  <p class="mb-0 fs-xxl-1" style="color: rgb(111, 57, 11);">Designer</p>
+                                  <p class="text-600 mb-0" style="color: rgb(111, 57, 11);">Yaounde | Cameroun</p>
+                                  <p class="text-600 mb-4" style="color: rgb(111, 57, 11);">01 ans d'expérience</p>
+                                  <div class="text-center">
+                                    <button class=" hover-top rounded-pill border-1" style="border-color: rgb(111, 57, 11);background-color: rgb(240, 240, 240); color: rgb(111, 57, 11);" type="submit">Fondateur Ecosystème ZENIA</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        <div class="carousel-item">
+                          <div class="row h-100 m-lg-7 mx-3 mt-6 mx-md-4 my-md-7">
+                            <div class="col-md-4 mb-8 mb-md-0">
+                              <div class="card card-span h-100 shadow">
+                                <div class="card-body d-flex flex-column flex-center py-5"><img src="{% static 'assets/img/gallery/profil.png' %}" width="128" alt="..." />
+                                  <h5 class="mt-3" style="color: rgb(111, 57, 11);">EMANI NOGO Daryl</h5>
+                                  <p class="mb-0 fs-xxl-1" style="color: rgb(111, 57, 11);">Developpeur Backend</p>
+                                  <p class="text-600 mb-0" style="color: rgb(111, 57, 11);">Yaounde | Cameroun</p>
+                                  <p class="text-600 mb-4" style="color: rgb(111, 57, 11);">05 ans d'expérience</p>
+                                  <div class="text-center">
+                                    <button class=" hover-top rounded-pill border-1" style="border-color: rgb(111, 57, 11);background-color: rgb(240, 240, 240); color: rgb(111, 57, 11);" type="submit">Fondateur Ecosystème ZENIA</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="col-md-4 mb-8 mb-md-0">
+                              <div class="card card-span h-100 shadow">
+                                <div class="card-body d-flex flex-column flex-center py-5"><img src="{% static 'assets/img/gallery/profil.png' %}" width="128" alt="..." />
+                                  <h5 class="mt-3" style="color: rgb(111, 57, 11);">EMANI NOGO Daryl</h5>
+                                  <p class="mb-0 fs-xxl-1" style="color: rgb(111, 57, 11);">Developpeur Frontend</p>
+                                  <p class="text-600 mb-0" style="color: rgb(111, 57, 11);">Yaounde | Cameroun</p>
+                                  <p class="text-600 mb-4" style="color: rgb(111, 57, 11);">02 ans d'expérience</p>
+                                  <div class="text-center">
+                                    <button class=" hover-top rounded-pill border-1" style="border-color: rgb(111, 57, 11);background-color: rgb(240, 240, 240); color: rgb(111, 57, 11);" type="submit">Fondateur Ecosystème ZENIA</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="col-md-4 mb-8 mb-md-0">
+                              <div class="card card-span h-100 shadow">
+                                <div class="card-body d-flex flex-column flex-center py-5"><img src="{% static 'assets/img/gallery/profil.png' %}" width="128" alt="..." />
+                                  <h5 class="mt-3" style="color: rgb(111, 57, 11);">EMANI NOGO Daryl</h5>
+                                  <p class="mb-0 fs-xxl-1" style="color: rgb(111, 57, 11);">Designer</p>
+                                  <p class="text-600 mb-0" style="color: rgb(111, 57, 11);">Yaounde | Cameroun</p>
+                                  <p class="text-600 mb-4" style="color: rgb(111, 57, 11);">01 ans d'expérience</p>
+                                  <div class="text-center">
+                                    <button class=" hover-top rounded-pill border-1" style="border-color: rgb(111, 57, 11);background-color: rgb(240, 240, 240); color: rgb(111, 57, 11);" type="submit">Fondateur Ecosystème ZENIA</button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+
+            
+
+            
+
+
+
+            
+
+              <div class="container" id="autre">
+                <div class="row">
+                  <div class="col-lg-6" >
+                    <h2 class="fw-bold text-light">Avez-vous besoin d'autres services Informatiques ?</h2>
+                    <p class="text-soft-primary">Nous restons à votre écoute !!! <br />et vous assistons de partout .</p>
+                  </div>
+                  <div class="col-lg-6">
+                    <h5 class="mb-3 text-soft-primary">Souscrivez à la Newsletter </h5>
+                    <form class="row gx-2 gy-2 align-items-center" action="{% url 'subscrib_newsletter' %}" method="POST" role="form" enctype="multipart/form-data">
+                      <div class="col">
+                        
+                          <!--label class="visually-hidden" for="inputEmailCta">Address</label-->
+                            {% csrf_token %}
+                            
+                            {{sf.as_p}}
+                        
+                        
+                      </div>
+                      <div class="d-grid gap-3 col-sm-auto">
+                        <input name="SubscribeType"  type="hidden" value="mailuser"/>
+                        <button class="btn btn-lg btn-light rounded-3 px-5 py-3" type="submit">Souscrivez</button>
+                        <!-- {% if msg_success_newsletter %}
+                          {{ msg_success_newsletter }}
+                        {% endif %} -->
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </section>
+            <section class="py-0 bg-light">
+              <div class="bg-holder opacity-25" style="background-image:url('{% static "assets/img/gallery/dot-bg.png" %}'); background-position:top left;margin-top:-3.125rem;background-size:auto;">
+              </div>
+              <!--/.bg-holder-->
+
+              <div class="container">
+                <div class="row py-8">
+                  <div class="col-12 col-sm-12 col-lg-6 mb-4 order-0 order-sm-0"><a class="text-decoration-none" href="#"><img src="{% static 'assets/img/gallery/eco.png'%}" height="350" alt="" /></a>
+                    <p class="my-4" style="text-decoration:overline; color: rgb(111, 57, 11);">Le Monde devient numérique avec <br />L'écosystème ZENIA.</p>
+                  </div>
+                  <div class="col-6 col-sm-4 col-lg-2 mb-3 order-2 order-sm-1">
+                    <h5 class="lh-lg fw-bold mb-4 text-black font-sans-serif">Nos Langues</h5>
+                    <ul class="list-unstyled mb-md-4 mb-lg-0">
+                      <li class="lh-lg"><a class="footer-link" style="text-decoration:overline; color: rgb(111, 57, 11);" href="#!">Espagnol</a></li>
+                      <li class="lh-lg"><a class="footer-link" style="text-decoration:overline; color: rgb(111, 57, 11);" href="#!">Italien</a></li>
+                      <li class="lh-lg"><a class="footer-link" style="text-decoration:overline; color: rgb(111, 57, 11);" href="#!">Anglais</a></li>
+                      <li class="lh-lg"><a class="footer-link" style="text-decoration:overline; color: rgb(111, 57, 11);" href="#!">Japonais</a></li>
+                      <li class="lh-lg"><a class="footer-link" style="text-decoration:overline; color: rgb(111, 57, 11);" href="#!">Français</a></li>
+                      <li class="lh-lg"><a class="footer-link" style="text-decoration:overline; color: rgb(111, 57, 11);" href="#!">Chinois</a></li>
+                    </ul>
+                  </div>
+                  <div class="col-6 col-sm-4 col-lg-2 mb-3 order-3 order-sm-2">
+                    <h5 class="lh-lg fw-bold text-black mb-4 font-sans-serif">Notre équipe</h5>
+                    <ul class="list-unstyled mb-md-4 mb-lg-0">
+                      <li class="lh-lg"><a class="footer-link" style="text-decoration:overline; color: rgb(111, 57, 11);" href="#!">Dev. Backend</a></li>
+                      <li class="lh-lg"><a class="footer-link" style="text-decoration:overline; color: rgb(111, 57, 11);" href="#!">Dev. Frontend</a></li>
+                      <li class="lh-lg"><a class="footer-link" style="text-decoration:overline; color: rgb(111, 57, 11);" href="#!">Designer</a></li>
+                    </ul>
+                  </div>
+                  <div class="col-6 col-sm-4 col-lg-2 mb-3 order-3 order-sm-2">
+                    <h5 class="lh-lg fw-bold text-black mb-4 font-sans-serif"> Nos Services</h5>
+                    <ul class="list-unstyled mb-md-4 mb-lg-0">
+                      <li class="lh-lg"><a class="footer-link" style="text-decoration:overline; color: rgb(111, 57, 11);" href="#!">A propos</a></li>
+                      <li class="lh-lg"><a class="footer-link" style="text-decoration:overline; color: rgb(111, 57, 11);" href="#!">Contactez-nous</a></li>
+                      <li class="lh-lg"><a class="footer-link" style="text-decoration:overline; color: rgb(111, 57, 11);" href="#!">Notre Newlestter</a></li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+
+              <!-- ============================================-->
+              <!-- <section> begin ============================-->
+              <section class="py-0 " style="background-color: rgb(111, 57, 11);">
+
+                <div class="container">
+                  <div class="row justify-content-md-between justify-content-evenly py-4">
+                    <div class="col-12 col-sm-8 col-md-6 col-lg-auto text-center text-md-start">
+                      <p class="fs--1 my-2 fw-bold text-200">Tout droit reservé &copy; Zenia Engine, 2025</p>
+                    </div>
+                    <div class="col-12 col-sm-8 col-md-6">
+                      <p class="fs--1 my-2 text-center text-md-end text-200"> On apprends chaque jour&nbsp;
+                        <svg class="bi bi-suit-heart-fill" xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="#F95C19" viewBox="0 0 16 16">
+                          <path d="M4 1c2.21 0 4 1.755 4 3.92C8 2.755 9.79 1 12 1s4 1.755 4 3.92c0 3.263-3.234 4.414-7.608 9.608a.513.513 0 0 1-.784 0C3.234 9.334 0 8.183 0 4.92 0 2.755 1.79 1 4 1z"></path>
+                        </svg>&nbsp;par&nbsp;<a class="fw-bold text-info" href="#" target="_blank">daryl21emani07@gmail.com</a>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <!-- end of .container-->
+
+              </section>
+              <!-- <section> close ============================-->
+              <!-- ============================================-->
+
+
+            </section>
+          </main>
+
+           <!-- ===============================================-->
+            <!--    JavaScripts-->
+            <!-- ===============================================-->
+
+            <script>
+                function animateClick(){
+                    const img =  document.getElementById('animatedImage');
+                    img.classList.add('my_image_clicked');
+
+                    //Supprimer la classe apres l'animation
+                    setTimeout(() => {
+                        img.classList.remove('my_image_clicked');
+
+                    }, 400); //duréé de l'animation
+                
+                }
+
+            </script>
+
+
+
+            <script src="{% static 'vendors/@popperjs/popper.min.js' %}"></script>
+            <script src="{%  static 'vendors/bootstrap/bootstrap.min.js' %}"></script>
+            <script src="{%static 'vendors/is/is.min.js' %}"></script>
+            <script src="https://scripts.sirv.com/sirvjs/v3/sirv.js"></script>
+            <script src="https://polyfill.io/v3/polyfill.min.js?features=window.scroll"></script>
+            <script src="{% static 'vendors/fontawesome/all.min.js' %}"></script>
+            <script src="{% static 'assets/js/theme.js' %}"></script>
+
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+
+     
+      
+    
+   
+     
+    
+
+
+
+
+      
+
+
+    
+{% endblock %}
+
+
+
+
+
+    
+
+
+
+      
+
+
+      
+      
+
+
+        
+
+
+
+   
+

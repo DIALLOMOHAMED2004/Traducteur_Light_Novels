@@ -1,0 +1,109 @@
+{% extends 'base_account.html' %}
+{% load static %}
+{% block account_bloc %}
+    
+    <section class="py-xxl-10 pb-0" id="home">
+        <div class="bg-holder bg-size" style="background-image:url('{% static "assets/img/gallery/tsu-bg.png" %}'); background-position:top;center;background-size:cover;">
+        </div>
+
+        
+
+         <div class="container">
+          <div class="row">
+            <div class="col-12 py-3">
+              
+              </div>
+              <!--/.bg-holder-->
+
+              <h1 class="text-center rounded" style="background-color: rgb(255, 255, 255);font-weight: bold; color: rgb(111, 57, 7);">Créer un compte</h1>
+            </div>
+          </div>
+        </div>
+
+        <div class="container">
+          <div class="row">
+            
+            <!--/.bg-holder-->
+
+            <div class="col-lg-6 z-index-2 mb-5"><img class="w-100" style="width: 30%; height: 70%;" src="{% static 'assets/img/gallery/tsuki.png' %}" /></div>
+            <div class="col-lg-6 z-index-2">
+              <form class="row g-3" role="form" action="{% url 'register' %}" method="POST" enctype="multipart/form-data">
+                <div class="col-md-12">
+                    {% csrf_token %}
+                    {{cuf.as_p}}
+
+                  
+                </div>
+                
+                
+                
+                
+                <div class="col-12">
+                  <div class="d-grid">
+                    <input name="profileType"  type="hidden" value="utilisateur"/>
+                    <button class="btn  rounded-pill" style="border-color: white;background-color: rgb(111, 57, 7); color: white;"  type="submit">Enregistrez-vous</button>
+                    <a class="btn rounded-pill" style="border-color: rgb(111, 57, 7);font-size: 100%; background-color: white; color: rgb(111, 57, 7);" href="{% url 'login_view' %}">Allez vous connecter</a>
+                    <p>{{msgerror}}</p>
+                  </div>
+                </div>
+                <div class="col-lg-6 z-index-2 mb-5"><img style="width: 60%;"  src="{% static 'assets/img/gallery/car.png' %}" /></div>
+                
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+       
+        
+
+        
+    </section>
+
+   
+     
+    
+
+
+
+
+       <!-- ===============================================-->
+    <!--    JavaScripts-->
+    <!-- ===============================================-->
+    <script src="{% static 'vendors/@popperjs/popper.min.js' %}"></script>
+    <script src="{%  static 'vendors/bootstrap/bootstrap.min.js' %}"></script>
+    <script src="{%static 'vendors/is/is.min.js' %}"></script>
+    <script src="https://scripts.sirv.com/sirvjs/v3/sirv.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=window.scroll"></script>
+    <script src="{% static 'vendors/fontawesome/all.min.js' %}"></script>
+    <script src="{% static 'assets/js/theme.js' %}"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+
+
+    
+{% endblock %}
+
+
+
+
+
+    
+
+
+
+      
+
+
+      
+      
+
+
+        
+
+
+
+   
+

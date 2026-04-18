@@ -1,0 +1,148 @@
+{% extends 'base_app.html' %}
+{% load static %}
+{% block app_bloc %}
+
+    <main class="main" id="top">
+      <nav class="navbar navbar-expand-lg navbar-light fixed-top py-3 d-block" data-navbar-on-scroll="data-navbar-on-scroll">
+        <div class="container"><a class="navbar-brand" href="{% url 'reindex' %}"><img src="{% static 'assets/img/gallery/tsuki.png' %}" width="118" alt="logo" /></a>
+          
+        </div>
+      </nav>
+      <section class="py-xxl-10 pb-0" id="home">
+        <div class="bg-holder bg-size" style="background-image:url('{% static "assets/img/gallery/tsu-bg2.png" %}'); background-position:top;center;background-size:cover;">
+        </div>
+        
+
+        <div class="container" style="margin-top: 80px;">
+          <div class="row">
+            <div class="col-12 py-3">
+              
+              </div>
+              <!--/.bg-holder-->
+
+              <h1 class="text-center" style="font-weight: bold; color: rgb(111, 57, 7); margin-bottom: 15px;">Choisissez le fichier à traiter</h1>
+            </div>
+          </div>
+        </div>
+        <div class="container">
+          <div class="row">
+            
+            <!--/.bg-holder-->
+
+            <div class="col-lg-6 z-index-2 mb-5"><img class="w-100" style="width: 30%; height: 70%; animation: zoomIn 2s ease-in-out forwards;" src="{% static 'assets/img/gallery/tsuki.png' %}" /></div>
+            <div class="col-lg-6 z-index-2">
+              {% if user.state_abonnement == True %}
+                <form class="row g-3 rounded" role="form" action="{% url 'name_televerse_url_paid' %}" method="POST" enctype="multipart/form-data" style="background-color: rgb(111, 57, 11); color:aliceblue; border-radius: 15deg;">
+                  <div class="col-md-12">
+                    {% csrf_token %}
+                      {{DocForm.as_p}}
+                      
+
+                    
+                  </div>
+              
+                  <div class="col-12">
+                    <div class="d-grid">
+                      <input name="profileType"  type="hidden" value="pdf_img"/>
+                      
+                      <button class="btn  rounded-pill" style="border-color: white;background-color: rgb(111, 57, 7); color: white;"  type="submit">Téléverser</button>
+                      
+                      
+                      
+                      <a class="btn rounded-pill" style="border-color: rgb(111, 57, 7);font-size: 100%; background-color: white; color: rgb(111, 57, 7);" href="{% url 'check_table' %}">Obtenez nos offres pour étendre votre utilisation</a>
+                      {% if msg_error_televerse %}
+                        <p style="color: white">{{msg_error_televerse}}</p>
+                        <p style="color: white;">{{msg_error_limite_page_pdf}}</p>
+                      {% endif %}
+
+                      {% if msg_error_extension_file %}
+                          <p style="color: white">{{msg_error_extension_file}}</p>
+
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="col-lg-6 z-index-2 mb-5"><img style="width: 60%;"  src="{% static 'assets/img/gallery/car.png' %}" /></div>
+                  
+                  </div>
+                </form>
+              {% elif user.state_abonnement == False %}
+                <form class="row g-3 rounded" role="form" action="{% url 'name_televerse_url_free' %}" method="POST" enctype="multipart/form-data" style="background-color: rgb(111, 57, 11); color:aliceblue; border-radius: 15deg;">
+                  <div class="col-md-12">
+                    {% csrf_token %}
+                      {{DocForm.as_p}}
+                      
+
+                    
+                  </div>
+              
+                  <div class="col-12">
+                    <div class="d-grid">
+                      <input name="profileType"  type="hidden" value="pdf_img"/>
+                      
+                      <button class="btn  rounded-pill" style="border-color: white;background-color: rgb(111, 57, 7); color: white;"  type="submit">Téléverser</button>
+                      
+                      
+                      
+                      <a class="btn rounded-pill" style="border-color: rgb(111, 57, 7);font-size: 100%; background-color: white; color: rgb(111, 57, 7);" href="{% url 'check_table' %}">Obtenez nos offres pour étendre votre utilisation</a>
+                      {% if msg_error_televerse %}
+                        <p style="color: white">{{msg_error_televerse}}</p>
+                        <p style="color: white;">{{msg_error_limite_page_pdf}}</p>
+                      {% endif %}
+
+                      {% if msg_error_extension_file %}
+                          <p style="color: white">{{msg_error_extension_file}}</p>
+
+                      {% endif %}
+                    </div>
+                  </div>
+                  <div class="col-lg-6 z-index-2 mb-5"><img style="width: 60%;"  src="{% static 'assets/img/gallery/car.png' %}" /></div>
+                  
+                  </div>
+                </form>
+              {% endif %}
+
+            </div>
+            <p style="color:aqua">
+              {% if notif_stage_process %}
+                {{notif_stage_process}}
+              {% endif %}
+
+            </p>
+            
+          </div>
+        </div>
+      </section>
+
+
+
+       
+      
+
+      
+
+
+
+
+
+
+      
+
+
+        
+
+      </section>
+    </main>
+
+
+    <script src="{% static 'vendors/@popperjs/popper.min.js' %}"></script>
+    <script src="{%  static 'vendors/bootstrap/bootstrap.min.js' %}"></script>
+    <script src="{%static 'vendors/is/is.min.js' %}"></script>
+    <script src="https://scripts.sirv.com/sirvjs/v3/sirv.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=window.scroll"></script>
+    <script src="{% static 'vendors/fontawesome/all.min.js' %}"></script>
+    <script src="{% static 'assets/js/theme.js' %}"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+{% endblock %}
