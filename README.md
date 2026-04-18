@@ -2,6 +2,8 @@
 
 <img src="folder_img\tsuki2.png" alt="logo" widht="200" height="100">
 
+https://gitlab.com/daryl21emani07/tsukiyomi003/-/blob/main/folder_img/tsuki2.png?ref_type=heads
+
 <h1>[Application WEB pour la traduction de tes documents , image au format png et jpg ]</h1>
 
 le code source vous est accessible et vous pouvez le tester sans soucis.
