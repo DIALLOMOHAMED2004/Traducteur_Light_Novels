@@ -2,7 +2,7 @@
 
 <img src="folder_img/tsuki2.png" alt="logo" widht="200" height="100">
 
-https://gitlab.com/daryl21emani07/tsukiyomi003/-/blob/main/folder_img/tsuki2.png?ref_type=heads
+
 
 <h1>[Application WEB pour la traduction de tes documents , image au format png et jpg ]</h1>
 
@@ -27,7 +27,7 @@ NB: Python et PostgreSQL doivent être installés
 
 <i>NB: n'oubliez pas de modifier et configurer les informations de votre base de donnees dans le fichier de configuration (settings.py)</i>
 
-[Img illustration](folder_img/tsukiyomi.PNG)
+
 
 <img src="folder_img/tsukiyomi.PNG" alt="logo" widht="400" height="200">
 
