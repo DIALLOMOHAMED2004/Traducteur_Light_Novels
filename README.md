@@ -9,15 +9,18 @@ il suffit de cloner ce depot et de preparer votre environnement .
 ## Etape 1 [Cloner le dépot]
 NB: Python et PostgreSQL doivent être installés
 
---> création de votre environnement virtuel (python -m virtualenv nom_environnement)
---> activer son environnement ( cd chemin_vers_environnement\scripts) puis (activate.bat)
---> cloner le depot (git clone chemin_vers_depot.git)
---> ouvrir le dossier du depot (cd depot)
---> installer les dependances (python -m pip install -r requirements.txt)
--->demarrer le serveur local (python manage.py runserver )
+--> initialiser la base de donnees (initdb -D \usr\local\pgsql\data) puis (pg_ctl -D \usr\local\pgsql\data start) pour lancer le serveur de base de données. \n
+--> création de votre environnement virtuel (python -m virtualenv nom_environnement)\n
+--> activer son environnement ( cd chemin_vers_environnement\scripts) puis (activate.bat)\n
+--> cloner le depot (git clone chemin_vers_depot.git)\n
+--> ouvrir le dossier du depot (cd depot)\n
+--> installer les dependances (python -m pip install -r requirements.txt)\n
+-->demarrer le serveur local (python manage.py runserver )\n
 --> tester l'application
 
 ## Enjoy :)
+
+
 
 
 
