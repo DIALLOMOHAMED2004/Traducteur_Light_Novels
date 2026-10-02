@@ -6,6 +6,13 @@ from pdf2image import convert_from_path
 from PIL import Image
 import pytesseract
 from deep_translator import GoogleTranslator
+from deep_translator.exceptions import BaseError, RequestError, TooManyRequests
+from requests.exceptions import RequestException
+from pdf2image.exceptions import (
+    PopplerNotInstalledError, PDFPageCountError, PDFSyntaxError, PDFPopplerTimeoutError,
+)
+from pytesseract.pytesseract import TesseractError
+from functools import wraps
 from docx import Document
 from docx2pdf import convert
 from Tsukiyomi_account_app.models import UserTsukiyomi
@@ -19,6 +26,32 @@ from django.core.mail import send_mass_mail, EmailMessage
 from .views_abonnement import check_abonnement_free, check_abonnement_paid
 from django.conf import settings
 import shutil
+import logging
+from smtplib import SMTPException
+
+logger = logging.getLogger(__name__)
+
+
+def _handle_document_errors(view):
+    """Arrêter les deux vues dès qu'une dépendance échoue, sans masquer les bugs Python."""
+    @wraps(view)
+    def wrapper(request, *args, **kwargs):
+        try:
+            return view(request, *args, **kwargs)
+        except (
+            BaseError, RequestError, TooManyRequests, RequestException,
+            TesseractError, PopplerNotInstalledError, PDFPageCountError,
+            PDFSyntaxError, PDFPopplerTimeoutError, SMTPException, OSError,
+        ) as error:
+            logger.warning("Échec du traitement documentaire (%s)", type(error).__name__)
+            return render(request, 'tsukiyomi_app/televerse_page.html', {
+                'DocForm': DocumentForm(prefix='pi'),
+                'msg_error_televerse': (
+                    "Le traitement ou l'envoi du document a échoué. "
+                    "Aucun envoi réussi n'a été confirmé. Contactez l'administrateur."
+                ),
+            }, status=502)
+    return wrapper
 #import argostranslate.package, argostranslate.translate
 
 #from datetime import datetime
@@ -85,6 +118,7 @@ def reindex(request):
 
 #vue qui ramene vers la page de televersement de fichier
 @check_abonnement_free
+@_handle_document_errors
 def get_televerse(request):
     print(f"l'Utilisateur {request.user} a un abonnement gratuit ...")
 
@@ -175,15 +209,7 @@ def get_televerse(request):
 
                                 lang_select_pdf = DocForm.cleaned_data['type_language']
                                 if lang_select_pdf == 'français' or lang_select_pdf == 'Français':
-                                    all_doc_pdf = ALL_DOC.filter(user=request.user, type_file = 'PDF')
-                                    lfp = list(all_doc_pdf)
-                                    for fpdf in lfp:
-                                        this_day = fpdf.uploaded_at
-                                    print(f"voici la date {this_day}")
-                                    #this_day = this_day
-                                    actual_pdf = ALL_DOC.filter(user=request.user, type_file='PDF', uploaded_at__gte=this_day)
-                                    for a_pdf in actual_pdf:
-                                        a = a_pdf.button_televerse.path
+                                    a = DocFile.button_televerse.path
 
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
@@ -213,14 +239,14 @@ def get_televerse(request):
 
                                     folder_doc = f'Tsukiyomi_doc/repository-{request.user}'
                                     merged_doc = Document()
-                                    for filename in os.listdir(folder_doc):
-                                        if filename.endswith('.docx'):
-                                            docu = Document(os.path.join(folder_doc, filename))
-                                            for element in docu.element.body:
-                                                merged_doc.element.body.append(element)
+                                    # Ne fusionner que les pages de ce PDF, dans leur ordre numérique.
+                                    for page_index in range(len(pages)):
+                                        docu = Document(os.path.join(folder_doc, f'trad_fr{page_index}.docx'))
+                                        for element in docu.element.body:
+                                            merged_doc.element.body.append(element)
                                     merged_doc.save(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx')
                                     #convert(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx', f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.pdf')
-                                    mail_user = a_pdf.user.email
+                                    mail_user = DocFile.user.email
 
                                             #transfert des fichiers traduits (.docx) sur la boite mail de l'utilisateur
                                             #le code ici
@@ -251,15 +277,7 @@ def get_televerse(request):
                                 
                                 ################################################################################################
                                 elif lang_select_pdf == 'anglais' or lang_select_pdf == 'Anglais':
-                                    all_doc_pdf = ALL_DOC.filter(user=request.user, type_file = 'PDF')
-                                    lfp = list(all_doc_pdf)
-                                    for fpdf in lfp:
-                                        this_day = fpdf.uploaded_at
-                                    print(f"voici la date {this_day}")
-                                    #this_day = this_day
-                                    actual_pdf = ALL_DOC.filter(user=request.user, type_file='PDF', uploaded_at__gte=this_day)
-                                    for a_pdf in actual_pdf:
-                                        a = a_pdf.button_televerse.path
+                                    a = DocFile.button_televerse.path
 
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
@@ -277,10 +295,7 @@ def get_televerse(request):
                                         else:
                                             #traduction des pages convertis en image en francais
                                             #code pour traduire en francais le text extrait
-                                            try:
-                                                translated_fr = GoogleTranslator(source='en', target='fr').translate(text, timeout=10)
-                                            except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                            translated_fr = GoogleTranslator(source='en', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                             doc = Document()
                                             doc.add_heading('TRADUIT PAR ZENIA')
@@ -292,14 +307,14 @@ def get_televerse(request):
 
                                     folder_doc = f'Tsukiyomi_doc/repository-{request.user}'
                                     merged_doc = Document()
-                                    for filename in os.listdir(folder_doc):
-                                        if filename.endswith('.docx'):
-                                            docu = Document(os.path.join(folder_doc, filename))
-                                            for element in docu.element.body:
-                                                merged_doc.element.body.append(element)
+                                    # Ne fusionner que les pages de ce PDF, dans leur ordre numérique.
+                                    for page_index in range(len(pages)):
+                                        docu = Document(os.path.join(folder_doc, f'trad_fr{page_index}.docx'))
+                                        for element in docu.element.body:
+                                            merged_doc.element.body.append(element)
                                     merged_doc.save(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx')
                                     #convert(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx', f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.pdf')
-                                    mail_user = a_pdf.user.email
+                                    mail_user = DocFile.user.email
 
                                             #transfert des fichiers traduits (.docx) sur la boite mail de l'utilisateur
                                             #le code ici
@@ -329,15 +344,7 @@ def get_televerse(request):
                                             })
                                 #########################################################################################################
                                 elif lang_select_pdf == 'italien' or lang_select_pdf == 'Italien':
-                                    all_doc_pdf = ALL_DOC.filter(user=request.user, type_file = 'PDF')
-                                    lfp = list(all_doc_pdf)
-                                    for fpdf in lfp:
-                                        this_day = fpdf.uploaded_at
-                                    print(f"voici la date {this_day}")
-                                    #this_day = this_day
-                                    actual_pdf = ALL_DOC.filter(user=request.user, type_file='PDF', uploaded_at__gte=this_day)
-                                    for a_pdf in actual_pdf:
-                                        a = a_pdf.button_televerse.path
+                                    a = DocFile.button_televerse.path
 
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
@@ -355,10 +362,7 @@ def get_televerse(request):
                                         else:
                                             #traduction des pages convertis en image en francais
                                             #code pour traduire en francais le text extrait
-                                            try:
-                                                translated_fr = GoogleTranslator(source='ita', target='fr').translate(text, timeout=10)
-                                            except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                            translated_fr = GoogleTranslator(source='it', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                             doc = Document()
                                             doc.add_heading('TRADUIT PAR ZENIA')
@@ -370,14 +374,14 @@ def get_televerse(request):
 
                                     folder_doc = f'Tsukiyomi_doc/repository-{request.user}'
                                     merged_doc = Document()
-                                    for filename in os.listdir(folder_doc):
-                                        if filename.endswith('.docx'):
-                                            docu = Document(os.path.join(folder_doc, filename))
-                                            for element in docu.element.body:
-                                                merged_doc.element.body.append(element)
+                                    # Ne fusionner que les pages de ce PDF, dans leur ordre numérique.
+                                    for page_index in range(len(pages)):
+                                        docu = Document(os.path.join(folder_doc, f'trad_fr{page_index}.docx'))
+                                        for element in docu.element.body:
+                                            merged_doc.element.body.append(element)
                                     merged_doc.save(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx')
                                     #convert(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx', f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.pdf')
-                                    mail_user = a_pdf.user.email
+                                    mail_user = DocFile.user.email
 
                                             #transfert des fichiers traduits (.docx) sur la boite mail de l'utilisateur
                                             #le code ici
@@ -407,15 +411,7 @@ def get_televerse(request):
                                             })
                                 ##########################################################################################################
                                 elif lang_select_pdf == 'japonais' or lang_select_pdf == 'Japonais':
-                                    all_doc_pdf = ALL_DOC.filter(user=request.user, type_file = 'PDF')
-                                    lfp = list(all_doc_pdf)
-                                    for fpdf in lfp:
-                                        this_day = fpdf.uploaded_at
-                                    print(f"voici la date {this_day}")
-                                    #this_day = this_day
-                                    actual_pdf = ALL_DOC.filter(user=request.user, type_file='PDF', uploaded_at__gte=this_day)
-                                    for a_pdf in actual_pdf:
-                                        a = a_pdf.button_televerse.path
+                                    a = DocFile.button_televerse.path
 
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
@@ -433,10 +429,7 @@ def get_televerse(request):
                                         else:
                                             #traduction des pages convertis en image en francais
                                             #code pour traduire en francais le text extrait
-                                            try:
-                                                translated_fr = GoogleTranslator(source='jpn', target='fr').translate(text, timeout=10)
-                                            except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                            translated_fr = GoogleTranslator(source='ja', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                             doc = Document()
                                             doc.add_heading('TRADUIT PAR ZENIA')
@@ -448,14 +441,14 @@ def get_televerse(request):
 
                                     folder_doc = f'Tsukiyomi_doc/repository-{request.user}'
                                     merged_doc = Document()
-                                    for filename in os.listdir(folder_doc):
-                                        if filename.endswith('.docx'):
-                                            docu = Document(os.path.join(folder_doc, filename))
-                                            for element in docu.element.body:
-                                                merged_doc.element.body.append(element)
+                                    # Ne fusionner que les pages de ce PDF, dans leur ordre numérique.
+                                    for page_index in range(len(pages)):
+                                        docu = Document(os.path.join(folder_doc, f'trad_fr{page_index}.docx'))
+                                        for element in docu.element.body:
+                                            merged_doc.element.body.append(element)
                                     merged_doc.save(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx')
                                     #convert(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx', f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.pdf')
-                                    mail_user = a_pdf.user.email
+                                    mail_user = DocFile.user.email
 
                                             #transfert des fichiers traduits (.docx) sur la boite mail de l'utilisateur
                                             #le code ici
@@ -485,15 +478,7 @@ def get_televerse(request):
                                             })
                                 #############################################################################################################
                                 elif lang_select_pdf == 'espagnol' or lang_select_pdf == 'Espagnol':
-                                    all_doc_pdf = ALL_DOC.filter(user=request.user, type_file = 'PDF')
-                                    lfp = list(all_doc_pdf)
-                                    for fpdf in lfp:
-                                        this_day = fpdf.uploaded_at
-                                    print(f"voici la date {this_day}")
-                                    #this_day = this_day
-                                    actual_pdf = ALL_DOC.filter(user=request.user, type_file='PDF', uploaded_at__gte=this_day)
-                                    for a_pdf in actual_pdf:
-                                        a = a_pdf.button_televerse.path
+                                    a = DocFile.button_televerse.path
 
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
@@ -511,10 +496,7 @@ def get_televerse(request):
                                         else:
                                             #traduction des pages convertis en image en francais
                                             #code pour traduire en francais le text extrait
-                                            try:
-                                                translated_fr = GoogleTranslator(source='spa', target='fr').translate(text, timeout=10)
-                                            except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                            translated_fr = GoogleTranslator(source='es', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                             doc = Document()
                                             doc.add_heading('TRADUIT PAR ZENIA')
@@ -526,14 +508,14 @@ def get_televerse(request):
 
                                     folder_doc = f'Tsukiyomi_doc/repository-{request.user}'
                                     merged_doc = Document()
-                                    for filename in os.listdir(folder_doc):
-                                        if filename.endswith('.docx'):
-                                            docu = Document(os.path.join(folder_doc, filename))
-                                            for element in docu.element.body:
-                                                merged_doc.element.body.append(element)
+                                    # Ne fusionner que les pages de ce PDF, dans leur ordre numérique.
+                                    for page_index in range(len(pages)):
+                                        docu = Document(os.path.join(folder_doc, f'trad_fr{page_index}.docx'))
+                                        for element in docu.element.body:
+                                            merged_doc.element.body.append(element)
                                     merged_doc.save(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx')
                                     #convert(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx', f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.pdf')
-                                    mail_user = a_pdf.user.email
+                                    mail_user = DocFile.user.email
 
                                             #transfert des fichiers traduits (.docx) sur la boite mail de l'utilisateur
                                             #le code ici
@@ -563,15 +545,7 @@ def get_televerse(request):
                                             })
                                 ############################################################################################################
                                 elif lang_select_pdf == 'chinois' or lang_select_pdf == 'Chinois':
-                                    all_doc_pdf = ALL_DOC.filter(user=request.user, type_file = 'PDF')
-                                    lfp = list(all_doc_pdf)
-                                    for fpdf in lfp:
-                                        this_day = fpdf.uploaded_at
-                                    print(f"voici la date {this_day}")
-                                    #this_day = this_day
-                                    actual_pdf = ALL_DOC.filter(user=request.user, type_file='PDF', uploaded_at__gte=this_day)
-                                    for a_pdf in actual_pdf:
-                                        a = a_pdf.button_televerse.path
+                                    a = DocFile.button_televerse.path
 
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
@@ -589,10 +563,7 @@ def get_televerse(request):
                                         else:
                                             #traduction des pages convertis en image en francais
                                             #code pour traduire en francais le text extrait
-                                            try:
-                                                translated_fr = GoogleTranslator(source='chi', target='fr').translate(text, timeout=10)
-                                            except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                            translated_fr = GoogleTranslator(source='zh-TW', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                             doc = Document()
                                             doc.add_heading('TRADUIT PAR ZENIA')
@@ -604,14 +575,14 @@ def get_televerse(request):
 
                                     folder_doc = f'Tsukiyomi_doc/repository-{request.user}'
                                     merged_doc = Document()
-                                    for filename in os.listdir(folder_doc):
-                                        if filename.endswith('.docx'):
-                                            docu = Document(os.path.join(folder_doc, filename))
-                                            for element in docu.element.body:
-                                                merged_doc.element.body.append(element)
+                                    # Ne fusionner que les pages de ce PDF, dans leur ordre numérique.
+                                    for page_index in range(len(pages)):
+                                        docu = Document(os.path.join(folder_doc, f'trad_fr{page_index}.docx'))
+                                        for element in docu.element.body:
+                                            merged_doc.element.body.append(element)
                                     merged_doc.save(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx')
                                     #convert(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx', f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.pdf')
-                                    mail_user = a_pdf.user.email
+                                    mail_user = DocFile.user.email
 
                                             #transfert des fichiers traduits (.docx) sur la boite mail de l'utilisateur
                                             #le code ici
@@ -683,21 +654,7 @@ def get_televerse(request):
                             DocFile.save()
 
                             #le traitement et la conversion se font ici
-                            list_image = ALL_DOC.filter(user=request.user, type_file="Image")
-                            lt = list(list_image)
-                            
-                            for ai in lt:
-                                
-                                dat = ai.uploaded_at
-                            #print(f"{dat}")
-                            actual_image = ALL_DOC.filter(user=request.user, type_file='Image', uploaded_at__gte=dat)
-                                
-                            for ai in actual_image:
-
-                                print(f"fichier image actuel : {ai.button_televerse.name}")
-                            
-                                    #   media/Copilot_20251117_121225.png
-                                img = Image.open(f'{ai.button_televerse.path}')
+                            with Image.open(DocFile.button_televerse.path) as img:
                                 lang_select = DocForm.cleaned_data['type_language']
 
                                 #bloc gestion langue francaise
@@ -714,10 +671,7 @@ def get_televerse(request):
                                         
 
                                         #code de traduction du texte
-                                        try:
-                                            translated_fr = GoogleTranslator(source='fr', target='fr').translate(text, timeout=10)
-                                        except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                        translated_fr = GoogleTranslator(source='fr', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                         doc = Document()
                                         doc.add_heading('TRADUIT PAR ZENIA')
@@ -727,7 +681,7 @@ def get_televerse(request):
                                         
                                         doc.save(f'Tsukiyomi_doc/repositoryImg-{request.user}/trad_fr.docx')
                                         #convert('Tsukiyomi_doc/trad_fr.docx', 'Tsukiyomi_doc/trad_fr.pdf')
-                                        mail_user = ai.user.email
+                                        mail_user = DocFile.user.email
                                             
                                           
                                         #transfert des fichiers traduits (.docx, .pdf) sur la boite mail de l'utilisateur
@@ -765,10 +719,7 @@ def get_televerse(request):
                                          })
                                     else:
                                         #code de traduction du texte
-                                        try:
-                                                translated_fr = GoogleTranslator(source='en', target='fr').translate(text, timeout=10)
-                                        except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                        translated_fr = GoogleTranslator(source='en', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                         doc = Document()
                                         doc.add_heading('TRADUIT PAR ZENIA')
@@ -778,7 +729,7 @@ def get_televerse(request):
                                         
                                         doc.save(f'Tsukiyomi_doc/repositoryImg-{request.user}/trad_fr.docx')
                                         #convert('Tsukiyomi_doc/trad_fr.docx', 'Tsukiyomi_doc/trad_fr.pdf')
-                                        mail_user = ai.user.email
+                                        mail_user = DocFile.user.email
                                             
                                             
                                         #transfert des fichiers traduits (.docx, .pdf) sur la boite mail de l'utilisateur
@@ -832,10 +783,7 @@ def get_televerse(request):
                                          })
                                     else:
                                         #code de traduction du texte
-                                        try:
-                                                translated_fr = GoogleTranslator(source='jpn', target='fr').translate(text, timeout=10)
-                                        except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                        translated_fr = GoogleTranslator(source='ja', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                         doc = Document()
                                         doc.add_heading('TRADUIT PAR ZENIA')
@@ -845,7 +793,7 @@ def get_televerse(request):
                                        
                                         doc.save(f'Tsukiyomi_doc/repositoryImg-{request.user}/trad_fr.docx')
                                         #convert('Tsukiyomi_doc/trad_fr.docx', 'Tsukiyomi_doc/trad_fr.pdf')
-                                        mail_user = ai.user.email
+                                        mail_user = DocFile.user.email
                                             
                                             
                                         #transfert des fichiers traduits (.docx, .pdf) sur la boite mail de l'utilisateur
@@ -897,10 +845,7 @@ def get_televerse(request):
                                          })
                                     else:
                                         #code de traduction du texte
-                                        try:
-                                                translated_fr = GoogleTranslator(source='spa', target='fr').translate(text, timeout=10)
-                                        except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                        translated_fr = GoogleTranslator(source='es', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                         doc = Document()
                                         doc.add_heading('TRADUIT PAR ZENIA')
@@ -910,7 +855,7 @@ def get_televerse(request):
                                         
                                         doc.save(f'Tsukiyomi_doc/repositoryImg-{request.user}/trad_fr.docx')
                                         #convert('Tsukiyomi_doc/trad_fr.docx', 'Tsukiyomi_doc/trad_fr.pdf')
-                                        mail_user = ai.user.email
+                                        mail_user = DocFile.user.email
                                             
                                             
                                         #transfert des fichiers traduits (.docx, .pdf) sur la boite mail de l'utilisateur
@@ -962,10 +907,7 @@ def get_televerse(request):
                                          })
                                     else:
                                         #code de traduction du texte
-                                        try:
-                                                translated_fr = GoogleTranslator(source='chi', target='fr').translate(text, timeout=10)
-                                        except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                        translated_fr = GoogleTranslator(source='zh-TW', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                         doc = Document()
                                         doc.add_heading('TRADUIT PAR ZENIA')
@@ -975,7 +917,7 @@ def get_televerse(request):
                                         
                                         doc.save(f'Tsukiyomi_doc/repositoryImg-{request.user}/trad_fr.docx')
                                         #convert('Tsukiyomi_doc/trad_fr.docx', 'Tsukiyomi_doc/trad_fr.pdf')
-                                        mail_user = ai.user.email
+                                        mail_user = DocFile.user.email
                                             
                                             
                                         #transfert des fichiers traduits (.docx, .pdf) sur la boite mail de l'utilisateur
@@ -1028,10 +970,7 @@ def get_televerse(request):
                                          })
                                     else:
                                         #code de traduction du texte
-                                        try:
-                                                translated_fr = GoogleTranslator(source='ita', target='fr').translate(text, timeout=10)
-                                        except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                        translated_fr = GoogleTranslator(source='it', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                         doc = Document()
                                         doc.add_heading('TRADUIT PAR ZENIA')
@@ -1041,7 +980,7 @@ def get_televerse(request):
                                         
                                         doc.save(f'Tsukiyomi_doc/repositoryImg-{request.user}/trad_fr.docx')
                                         #convert('Tsukiyomi_doc/trad_fr.docx', 'Tsukiyomi_doc/trad_fr.pdf')
-                                        mail_user = ai.user.email
+                                        mail_user = DocFile.user.email
                                             
                                             
                                         #transfert des fichiers traduits (.docx, .pdf) sur la boite mail de l'utilisateur
@@ -1225,6 +1164,7 @@ def get_televerse(request):
 
 
 def subscribe_view(request):
+    sf = SubscribeForm()
     if request.method == 'POST':
     
         sf = SubscribeForm(request.POST or None)
@@ -1236,8 +1176,7 @@ def subscribe_view(request):
                 message = "Bonjour, Nous vous remerçions pour votre inscription"
 
                 messages = [
-                    (sujet, message, settings.DEFAULT_FROM_EMAIL, [email])
-                    for email in subscriber.email
+                    (sujet, message, settings.DEFAULT_FROM_EMAIL, [subscriber.email])
                 ]
                 send_mass_mail(messages, fail_silently=False)
 
@@ -1247,12 +1186,11 @@ def subscribe_view(request):
                     'msg_success_newsletter' : msg_success_newsletter,
                     'sf' : SubscribeForm()
                 })
-            except ConnectionRefusedError :
-                HttpResponseRedirect("Vous n'êtes pas connecté à internet ...")
-                print("Vous n'êtes pas connecté à internet pour valider la newsletter ...")
-    
+            except (OSError, SMTPException) as error:
+                logger.warning("Échec de l'e-mail newsletter (%s)", type(error).__name__)
+                sf.add_error(None, "L'inscription est enregistrée, mais l'e-mail de bienvenue n'a pas pu être envoyé.")
+                return render(request, 'tsukiyomi_app/index.html', {'sf': sf}, status=502)
 
-    sf = SubscribeForm()
     return render(request, 'tsukiyomi_app/index.html', context={
         'sf' : sf
     })
@@ -1268,6 +1206,7 @@ def check_table_users(request):
 #---------------------------------VUES ACCES PAYANT--------------------------------------------------------
 
 @check_abonnement_paid
+@_handle_document_errors
 def get_televerse2(request):
     print(f"l'Utilisateur {request.user} a un abonnement payant ...")
 
@@ -1358,15 +1297,7 @@ def get_televerse2(request):
 
                                 lang_select_pdf = DocForm.cleaned_data['type_language']
                                 if lang_select_pdf == 'français' or lang_select_pdf == 'Français':
-                                    all_doc_pdf = ALL_DOC.filter(user=request.user, type_file = 'PDF')
-                                    lfp = list(all_doc_pdf)
-                                    for fpdf in lfp:
-                                        this_day = fpdf.uploaded_at
-                                    print(f"voici la date {this_day}")
-                                    #this_day = this_day
-                                    actual_pdf = ALL_DOC.filter(user=request.user, type_file='PDF', uploaded_at__gte=this_day)
-                                    for a_pdf in actual_pdf:
-                                        a = a_pdf.button_televerse.path
+                                    a = DocFile.button_televerse.path
 
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
@@ -1396,14 +1327,14 @@ def get_televerse2(request):
 
                                     folder_doc = f'Tsukiyomi_doc/repository-{request.user}'
                                     merged_doc = Document()
-                                    for filename in os.listdir(folder_doc):
-                                        if filename.endswith('.docx'):
-                                            docu = Document(os.path.join(folder_doc, filename))
-                                            for element in docu.element.body:
-                                                merged_doc.element.body.append(element)
+                                    # Ne fusionner que les pages de ce PDF, dans leur ordre numérique.
+                                    for page_index in range(len(pages)):
+                                        docu = Document(os.path.join(folder_doc, f'trad_fr{page_index}.docx'))
+                                        for element in docu.element.body:
+                                            merged_doc.element.body.append(element)
                                     merged_doc.save(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx')
                                     #convert(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx', f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.pdf')
-                                    mail_user = a_pdf.user.email
+                                    mail_user = DocFile.user.email
 
                                             #transfert des fichiers traduits (.docx) sur la boite mail de l'utilisateur
                                             #le code ici
@@ -1434,15 +1365,7 @@ def get_televerse2(request):
                                 
                                 ################################################################################################
                                 elif lang_select_pdf == 'anglais' or lang_select_pdf == 'Anglais':
-                                    all_doc_pdf = ALL_DOC.filter(user=request.user, type_file = 'PDF')
-                                    lfp = list(all_doc_pdf)
-                                    for fpdf in lfp:
-                                        this_day = fpdf.uploaded_at
-                                    print(f"voici la date {this_day}")
-                                    #this_day = this_day
-                                    actual_pdf = ALL_DOC.filter(user=request.user, type_file='PDF', uploaded_at__gte=this_day)
-                                    for a_pdf in actual_pdf:
-                                        a = a_pdf.button_televerse.path
+                                    a = DocFile.button_televerse.path
 
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
@@ -1460,10 +1383,7 @@ def get_televerse2(request):
                                         else:
                                             #traduction des pages convertis en image en francais
                                             #code pour traduire en francais le text extrait
-                                            try:
-                                                translated_fr = GoogleTranslator(source='en', target='fr').translate(text, timeout=10)
-                                            except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                            translated_fr = GoogleTranslator(source='en', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                             doc = Document()
                                             doc.add_heading('TRADUIT PAR ZENIA')
@@ -1475,14 +1395,14 @@ def get_televerse2(request):
 
                                     folder_doc = f'Tsukiyomi_doc/repository-{request.user}'
                                     merged_doc = Document()
-                                    for filename in os.listdir(folder_doc):
-                                        if filename.endswith('.docx'):
-                                            docu = Document(os.path.join(folder_doc, filename))
-                                            for element in docu.element.body:
-                                                merged_doc.element.body.append(element)
+                                    # Ne fusionner que les pages de ce PDF, dans leur ordre numérique.
+                                    for page_index in range(len(pages)):
+                                        docu = Document(os.path.join(folder_doc, f'trad_fr{page_index}.docx'))
+                                        for element in docu.element.body:
+                                            merged_doc.element.body.append(element)
                                     merged_doc.save(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx')
                                     #convert(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx', f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.pdf')
-                                    mail_user = a_pdf.user.email
+                                    mail_user = DocFile.user.email
 
                                             #transfert des fichiers traduits (.docx) sur la boite mail de l'utilisateur
                                             #le code ici
@@ -1512,15 +1432,7 @@ def get_televerse2(request):
                                             })
                                 #########################################################################################################
                                 elif lang_select_pdf == 'italien' or lang_select_pdf == 'Italien':
-                                    all_doc_pdf = ALL_DOC.filter(user=request.user, type_file = 'PDF')
-                                    lfp = list(all_doc_pdf)
-                                    for fpdf in lfp:
-                                        this_day = fpdf.uploaded_at
-                                    print(f"voici la date {this_day}")
-                                    #this_day = this_day
-                                    actual_pdf = ALL_DOC.filter(user=request.user, type_file='PDF', uploaded_at__gte=this_day)
-                                    for a_pdf in actual_pdf:
-                                        a = a_pdf.button_televerse.path
+                                    a = DocFile.button_televerse.path
 
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
@@ -1538,10 +1450,7 @@ def get_televerse2(request):
                                         else:
                                             #traduction des pages convertis en image en francais
                                             #code pour traduire en francais le text extrait
-                                            try:
-                                                translated_fr = GoogleTranslator(source='ita', target='fr').translate(text, timeout=10)
-                                            except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                            translated_fr = GoogleTranslator(source='it', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                             doc = Document()
                                             doc.add_heading('TRADUIT PAR ZENIA')
@@ -1553,14 +1462,14 @@ def get_televerse2(request):
 
                                     folder_doc = f'Tsukiyomi_doc/repository-{request.user}'
                                     merged_doc = Document()
-                                    for filename in os.listdir(folder_doc):
-                                        if filename.endswith('.docx'):
-                                            docu = Document(os.path.join(folder_doc, filename))
-                                            for element in docu.element.body:
-                                                merged_doc.element.body.append(element)
+                                    # Ne fusionner que les pages de ce PDF, dans leur ordre numérique.
+                                    for page_index in range(len(pages)):
+                                        docu = Document(os.path.join(folder_doc, f'trad_fr{page_index}.docx'))
+                                        for element in docu.element.body:
+                                            merged_doc.element.body.append(element)
                                     merged_doc.save(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx')
                                     #convert(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx', f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.pdf')
-                                    mail_user = a_pdf.user.email
+                                    mail_user = DocFile.user.email
 
                                             #transfert des fichiers traduits (.docx) sur la boite mail de l'utilisateur
                                             #le code ici
@@ -1590,15 +1499,7 @@ def get_televerse2(request):
                                             })
                                 ##########################################################################################################
                                 elif lang_select_pdf == 'japonais' or lang_select_pdf == 'Japonais':
-                                    all_doc_pdf = ALL_DOC.filter(user=request.user, type_file = 'PDF')
-                                    lfp = list(all_doc_pdf)
-                                    for fpdf in lfp:
-                                        this_day = fpdf.uploaded_at
-                                    print(f"voici la date {this_day}")
-                                    #this_day = this_day
-                                    actual_pdf = ALL_DOC.filter(user=request.user, type_file='PDF', uploaded_at__gte=this_day)
-                                    for a_pdf in actual_pdf:
-                                        a = a_pdf.button_televerse.path
+                                    a = DocFile.button_televerse.path
 
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
@@ -1616,10 +1517,7 @@ def get_televerse2(request):
                                         else:
                                             #traduction des pages convertis en image en francais
                                             #code pour traduire en francais le text extrait
-                                            try:
-                                                translated_fr = GoogleTranslator(source='jpn', target='fr').translate(text, timeout=10)
-                                            except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                            translated_fr = GoogleTranslator(source='ja', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                             doc = Document()
                                             doc.add_heading('TRADUIT PAR ZENIA')
@@ -1631,14 +1529,14 @@ def get_televerse2(request):
 
                                     folder_doc = f'Tsukiyomi_doc/repository-{request.user}'
                                     merged_doc = Document()
-                                    for filename in os.listdir(folder_doc):
-                                        if filename.endswith('.docx'):
-                                            docu = Document(os.path.join(folder_doc, filename))
-                                            for element in docu.element.body:
-                                                merged_doc.element.body.append(element)
+                                    # Ne fusionner que les pages de ce PDF, dans leur ordre numérique.
+                                    for page_index in range(len(pages)):
+                                        docu = Document(os.path.join(folder_doc, f'trad_fr{page_index}.docx'))
+                                        for element in docu.element.body:
+                                            merged_doc.element.body.append(element)
                                     merged_doc.save(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx')
                                     #convert(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx', f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.pdf')
-                                    mail_user = a_pdf.user.email
+                                    mail_user = DocFile.user.email
 
                                             #transfert des fichiers traduits (.docx) sur la boite mail de l'utilisateur
                                             #le code ici
@@ -1667,15 +1565,7 @@ def get_televerse2(request):
                                             })
                                 #############################################################################################################
                                 elif lang_select_pdf == 'espagnol' or lang_select_pdf == 'Espagnol':
-                                    all_doc_pdf = ALL_DOC.filter(user=request.user, type_file = 'PDF')
-                                    lfp = list(all_doc_pdf)
-                                    for fpdf in lfp:
-                                        this_day = fpdf.uploaded_at
-                                    print(f"voici la date {this_day}")
-                                    #this_day = this_day
-                                    actual_pdf = ALL_DOC.filter(user=request.user, type_file='PDF', uploaded_at__gte=this_day)
-                                    for a_pdf in actual_pdf:
-                                        a = a_pdf.button_televerse.path
+                                    a = DocFile.button_televerse.path
 
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
@@ -1693,10 +1583,7 @@ def get_televerse2(request):
                                         else:
                                             #traduction des pages convertis en image en francais
                                             #code pour traduire en francais le text extrait
-                                            try:
-                                                translated_fr = GoogleTranslator(source='spa', target='fr').translate(text, timeout=10)
-                                            except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                            translated_fr = GoogleTranslator(source='es', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                             doc = Document()
                                             doc.add_heading('TRADUIT PAR ZENIA')
@@ -1708,14 +1595,14 @@ def get_televerse2(request):
 
                                     folder_doc = f'Tsukiyomi_doc/repository-{request.user}'
                                     merged_doc = Document()
-                                    for filename in os.listdir(folder_doc):
-                                        if filename.endswith('.docx'):
-                                            docu = Document(os.path.join(folder_doc, filename))
-                                            for element in docu.element.body:
-                                                merged_doc.element.body.append(element)
+                                    # Ne fusionner que les pages de ce PDF, dans leur ordre numérique.
+                                    for page_index in range(len(pages)):
+                                        docu = Document(os.path.join(folder_doc, f'trad_fr{page_index}.docx'))
+                                        for element in docu.element.body:
+                                            merged_doc.element.body.append(element)
                                     merged_doc.save(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx')
                                     #convert(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx', f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.pdf')
-                                    mail_user = a_pdf.user.email
+                                    mail_user = DocFile.user.email
 
                                             #transfert des fichiers traduits (.docx) sur la boite mail de l'utilisateur
                                             #le code ici
@@ -1745,15 +1632,7 @@ def get_televerse2(request):
                                             })
                                 ############################################################################################################
                                 elif lang_select_pdf == 'chinois' or lang_select_pdf == 'Chinois':
-                                    all_doc_pdf = ALL_DOC.filter(user=request.user, type_file = 'PDF')
-                                    lfp = list(all_doc_pdf)
-                                    for fpdf in lfp:
-                                        this_day = fpdf.uploaded_at
-                                    print(f"voici la date {this_day}")
-                                    #this_day = this_day
-                                    actual_pdf = ALL_DOC.filter(user=request.user, type_file='PDF', uploaded_at__gte=this_day)
-                                    for a_pdf in actual_pdf:
-                                        a = a_pdf.button_televerse.path
+                                    a = DocFile.button_televerse.path
 
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
@@ -1771,10 +1650,7 @@ def get_televerse2(request):
                                         else:
                                             #traduction des pages convertis en image en francais
                                             #code pour traduire en francais le text extrait
-                                            try:
-                                                translated_fr = GoogleTranslator(source='chi', target='fr').translate(text, timeout=10)
-                                            except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                            translated_fr = GoogleTranslator(source='zh-TW', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                             doc = Document()
                                             doc.add_heading('TRADUIT PAR ZENIA')
@@ -1786,14 +1662,14 @@ def get_televerse2(request):
 
                                     folder_doc = f'Tsukiyomi_doc/repository-{request.user}'
                                     merged_doc = Document()
-                                    for filename in os.listdir(folder_doc):
-                                        if filename.endswith('.docx'):
-                                            docu = Document(os.path.join(folder_doc, filename))
-                                            for element in docu.element.body:
-                                                merged_doc.element.body.append(element)
+                                    # Ne fusionner que les pages de ce PDF, dans leur ordre numérique.
+                                    for page_index in range(len(pages)):
+                                        docu = Document(os.path.join(folder_doc, f'trad_fr{page_index}.docx'))
+                                        for element in docu.element.body:
+                                            merged_doc.element.body.append(element)
                                     merged_doc.save(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx')
                                     #convert(f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.docx', f'Tsukiyomi_doc/repository-{request.user}/trad_fusion_{request.user}.pdf')
-                                    mail_user = a_pdf.user.email
+                                    mail_user = DocFile.user.email
 
                                             #transfert des fichiers traduits (.docx) sur la boite mail de l'utilisateur
                                             #le code ici
@@ -1865,21 +1741,7 @@ def get_televerse2(request):
                             DocFile.save()
 
                             #le traitement et la conversion se font ici
-                            list_image = ALL_DOC.filter(user=request.user, type_file="Image")
-                            lt = list(list_image)
-                            
-                            for ai in lt:
-                                
-                                dat = ai.uploaded_at
-                            #print(f"{dat}")
-                            actual_image = ALL_DOC.filter(user=request.user, type_file='Image', uploaded_at__gte=dat)
-                                
-                            for ai in actual_image:
-
-                                print(f"fichier image actuel : {ai.button_televerse.name}")
-                            
-                                    #   media/Copilot_20251117_121225.png
-                                img = Image.open(f'{ai.button_televerse.path}')
+                            with Image.open(DocFile.button_televerse.path) as img:
                                 lang_select = DocForm.cleaned_data['type_language']
 
                                 #bloc gestion langue francaise
@@ -1896,10 +1758,7 @@ def get_televerse2(request):
                                         
 
                                         #code de traduction du texte
-                                        try:
-                                            translated_fr = GoogleTranslator(source='fr', target='fr').translate(text, timeout=10)
-                                        except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                        translated_fr = GoogleTranslator(source='fr', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                         doc = Document()
                                         doc.add_heading('TRADUIT PAR ZENIA')
@@ -1909,7 +1768,7 @@ def get_televerse2(request):
                                         
                                         doc.save(f'Tsukiyomi_doc/repositoryImg-{request.user}/trad_fr.docx')
                                         #convert('Tsukiyomi_doc/trad_fr.docx', 'Tsukiyomi_doc/trad_fr.pdf')
-                                        mail_user = ai.user.email
+                                        mail_user = DocFile.user.email
                                             
                                             
                                         #transfert des fichiers traduits (.docx, .pdf) sur la boite mail de l'utilisateur
@@ -1947,10 +1806,7 @@ def get_televerse2(request):
                                          })
                                     else:
                                         #code de traduction du texte
-                                        try:
-                                                translated_fr = GoogleTranslator(source='en', target='fr').translate(text, timeout=10)
-                                        except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                        translated_fr = GoogleTranslator(source='en', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                         doc = Document()
                                         doc.add_heading('TRADUIT PAR ZENIA')
@@ -1960,7 +1816,7 @@ def get_televerse2(request):
                                         
                                         doc.save(f'Tsukiyomi_doc/repositoryImg-{request.user}/trad_fr.docx')
                                         #convert('Tsukiyomi_doc/trad_fr.docx', 'Tsukiyomi_doc/trad_fr.pdf')
-                                        mail_user = ai.user.email
+                                        mail_user = DocFile.user.email
                                             
                                             
                                         #transfert des fichiers traduits (.docx, .pdf) sur la boite mail de l'utilisateur
@@ -2013,10 +1869,7 @@ def get_televerse2(request):
                                          })
                                     else:
                                         #code de traduction du texte
-                                        try:
-                                                translated_fr = GoogleTranslator(source='jpn', target='fr').translate(text, timeout=10)
-                                        except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                        translated_fr = GoogleTranslator(source='ja', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                         doc = Document()
                                         doc.add_heading('TRADUIT PAR ZENIA')
@@ -2026,7 +1879,7 @@ def get_televerse2(request):
                                        
                                         doc.save(f'Tsukiyomi_doc/repositoryImg-{request.user}/trad_fr.docx')
                                         #convert('Tsukiyomi_doc/trad_fr.docx', 'Tsukiyomi_doc/trad_fr.pdf')
-                                        mail_user = ai.user.email
+                                        mail_user = DocFile.user.email
                                             
                                             
                                         #transfert des fichiers traduits (.docx, .pdf) sur la boite mail de l'utilisateur
@@ -2078,10 +1931,7 @@ def get_televerse2(request):
                                          })
                                     else:
                                         #code de traduction du texte
-                                        try:
-                                                translated_fr = GoogleTranslator(source='spa', target='fr').translate(text, timeout=10)
-                                        except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                        translated_fr = GoogleTranslator(source='es', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                         doc = Document()
                                         doc.add_heading('TRADUIT PAR ZENIA')
@@ -2091,7 +1941,7 @@ def get_televerse2(request):
                                         
                                         doc.save(f'Tsukiyomi_doc/repositoryImg-{request.user}/trad_fr.docx')
                                         #convert('Tsukiyomi_doc/trad_fr.docx', 'Tsukiyomi_doc/trad_fr.pdf')
-                                        mail_user = ai.user.email
+                                        mail_user = DocFile.user.email
                                             
                                             
                                         #transfert des fichiers traduits (.docx, .pdf) sur la boite mail de l'utilisateur
@@ -2143,10 +1993,7 @@ def get_televerse2(request):
                                          })
                                     else:
                                         #code de traduction du texte
-                                        try:
-                                                translated_fr = GoogleTranslator(source='chi', target='fr').translate(text, timeout=10)
-                                        except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                        translated_fr = GoogleTranslator(source='zh-TW', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                         doc = Document()
                                         doc.add_heading('TRADUIT PAR ZENIA')
@@ -2156,7 +2003,7 @@ def get_televerse2(request):
                                         
                                         doc.save(f'Tsukiyomi_doc/repositoryImg-{request.user}/trad_fr.docx')
                                         #convert('Tsukiyomi_doc/trad_fr.docx', 'Tsukiyomi_doc/trad_fr.pdf')
-                                        mail_user = ai.user.email
+                                        mail_user = DocFile.user.email
                                             
                                             
                                         #transfert des fichiers traduits (.docx, .pdf) sur la boite mail de l'utilisateur
@@ -2209,10 +2056,7 @@ def get_televerse2(request):
                                          })
                                     else:
                                         #code de traduction du texte
-                                        try:
-                                                translated_fr = GoogleTranslator(source='ita', target='fr').translate(text, timeout=10)
-                                        except ConnectionError:
-                                                HttpResponseRedirect("Erreur de connexion au service de traduction ...")
+                                        translated_fr = GoogleTranslator(source='it', target='fr').translate(text, timeout=10)
                                             #translated_fr = argostranslate.translate.translate(text, "en", "fr")
                                         doc = Document()
                                         doc.add_heading('TRADUIT PAR ZENIA')
@@ -2222,7 +2066,7 @@ def get_televerse2(request):
                                         
                                         doc.save(f'Tsukiyomi_doc/repositoryImg-{request.user}/trad_fr.docx')
                                         #convert('Tsukiyomi_doc/trad_fr.docx', 'Tsukiyomi_doc/trad_fr.pdf')
-                                        mail_user = ai.user.email
+                                        mail_user = DocFile.user.email
                                             
                                             
                                         #transfert des fichiers traduits (.docx, .pdf) sur la boite mail de l'utilisateur

@@ -150,6 +150,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, os.path.join(BASE_DIR, 'media_upload'),)
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'Tsukiyomi_account_app.UserTsukiyomi'
+LOGIN_REDIRECT_URL = 'reindex'
 
 
 #pour la newsletter
