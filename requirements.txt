@@ -1,6 +1,6 @@
 argostranslate==1.10.0
 deep-translator==1.11.4
-Django==5.2.7
+Django==5.2.17
 docx2pdf==0.1.8
 googletrans==4.0.2
 pdf2image==1.17.0

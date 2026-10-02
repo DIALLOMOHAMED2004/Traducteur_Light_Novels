@@ -30,7 +30,10 @@
                     <h1 class="fw-light font-base fs-6 fs-xxl-7" style="animation: zoomIn 2s ease-in-out forwards  ;color: rgb(111, 57, 11); background-color: rgb(250, 250, 250); opacity: 0.92;">La solution<strong> qui facilite les traductions </strong>de tes documents<br />grace&nbsp;<strong>au pouvoir de l'Oeil Numérique.</strong></h1>
                     <p class="btn btn-lg btn-primary rounded-pill" style="animation: zoomIn 2s ease-in-out forwards;opacity: 0.88;background-color: rgb(111, 57, 11); border-color: antiquewhite;">Plateforme qui tranforme des Documents, Contenus d'images –de langues étrangères <br />en Français. Services accessibles 24/7. </p><a class="btn btn-lg btn-primary rounded-pill" href="{% url 'televerse_url' %}" style="background-color: rgb(111, 57, 11); border-color: antiquewhite; opacity: 0.88;" href="#!" role="button">Commence ici</a>
                     {% if user.is_superuser %}
-                       <a class="btn btn-lg btn-primary rounded-pill" href="{% url 'clear_media_name' %}" style="background-color: rgb(111, 57, 11); border-color: antiquewhite; opacity: 0.88;" role="button">rôle admin --> éffacer le dossier media upload</a>
+                      <form action="{% url 'clear_media_name' %}" method="POST" class="d-inline">
+                        {% csrf_token %}
+                        <button class="btn btn-lg btn-primary rounded-pill" style="background-color: rgb(111, 57, 11); border-color: antiquewhite; opacity: 0.88;" type="submit">rôle admin --> éffacer le dossier media upload</button>
+                      </form>
                     {% endif %}
                   </div>
                 </div>
