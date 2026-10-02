@@ -40,10 +40,14 @@
 
               <div class="col-lg-6 z-index-2 mb-5"><img class="w-100" style="width: 30%; height: 70%;" src="{% static 'assets/img/gallery/tsuki.png' %}" /></div>
               <div class="col-lg-6 z-index-2">
-                <form class="row g-3" role="form" action="{% url 'login_view' %}" method="POST" enctype="multipart/form-data">
+                <form class="row g-3" role="form" action="{{ request.path }}" method="POST" enctype="multipart/form-data">
                   <div class="col-md-12">
                       {% csrf_token %}
+                      {% if next %}
+                        <input type="hidden" name="next" value="{{ next }}">
+                      {% endif %}
                       {{luf.as_p}}
+                      {{form.as_p}}
 
                     
                   </div>
