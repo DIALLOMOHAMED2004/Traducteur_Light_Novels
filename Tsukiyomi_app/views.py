@@ -9,7 +9,8 @@ from deep_translator import GoogleTranslator
 from docx import Document
 from docx2pdf import convert
 from Tsukiyomi_account_app.models import UserTsukiyomi
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.views.decorators.http import require_POST
 import os
 from PyPDF2 import PdfReader
 from django.core.files import uploadedfile
@@ -21,10 +22,6 @@ import shutil
 #import argostranslate.package, argostranslate.translate
 
 #from datetime import datetime
-
-
-poppler_path = r'C:\Program Files\poppler-24.08.0\Library\bin'
-os.environ["PATH"] += os.pathsep + poppler_path
 
 
 #installation d'un package de traduction en_fr
@@ -43,6 +40,11 @@ state_admin_clear = False
 ALL_DOC = DocFile.objects.all()
 
 #vue qui permet de supprimer tous les fichiers uploadés depuis le repertoire media_upload/media via interface admin
+@user_passes_test(
+    lambda user: user.is_authenticated and user.is_active and user.is_superuser,
+    login_url='login',
+)
+@require_POST
 def clear_media_data(request):
     folder_media_upload = 'media_upload/media'
     
@@ -186,7 +188,7 @@ def get_televerse(request):
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
 
-                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}', poppler_path=poppler_path)
+                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}')
 
                                     #extraction du text de chaque page
                                     for i, page in enumerate(pages):
@@ -262,7 +264,7 @@ def get_televerse(request):
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
 
-                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}', poppler_path=poppler_path)
+                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}')
 
                                     #extraction du text de chaque page
                                     for i, page in enumerate(pages):
@@ -340,7 +342,7 @@ def get_televerse(request):
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
 
-                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}', poppler_path=poppler_path)
+                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}')
 
                                     #extraction du text de chaque page
                                     for i, page in enumerate(pages):
@@ -418,7 +420,7 @@ def get_televerse(request):
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
 
-                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}', poppler_path=poppler_path)
+                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}')
 
                                     #extraction du text de chaque page
                                     for i, page in enumerate(pages):
@@ -496,7 +498,7 @@ def get_televerse(request):
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
 
-                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}', poppler_path=poppler_path)
+                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}')
 
                                     #extraction du text de chaque page
                                     for i, page in enumerate(pages):
@@ -574,7 +576,7 @@ def get_televerse(request):
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
 
-                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}', poppler_path=poppler_path)
+                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}')
 
                                     #extraction du text de chaque page
                                     for i, page in enumerate(pages):
@@ -1369,7 +1371,7 @@ def get_televerse2(request):
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
 
-                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}', poppler_path=poppler_path)
+                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}')
 
                                     #extraction du text de chaque page
                                     for i, page in enumerate(pages):
@@ -1445,7 +1447,7 @@ def get_televerse2(request):
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
 
-                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}', poppler_path=poppler_path)
+                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}')
 
                                     #extraction du text de chaque page
                                     for i, page in enumerate(pages):
@@ -1523,7 +1525,7 @@ def get_televerse2(request):
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
 
-                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}', poppler_path=poppler_path)
+                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}')
 
                                     #extraction du text de chaque page
                                     for i, page in enumerate(pages):
@@ -1601,7 +1603,7 @@ def get_televerse2(request):
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
 
-                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}', poppler_path=poppler_path)
+                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}')
 
                                     #extraction du text de chaque page
                                     for i, page in enumerate(pages):
@@ -1678,7 +1680,7 @@ def get_televerse2(request):
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
 
-                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}', poppler_path=poppler_path)
+                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}')
 
                                     #extraction du text de chaque page
                                     for i, page in enumerate(pages):
@@ -1756,7 +1758,7 @@ def get_televerse2(request):
                                     os.makedirs(f'media_upload/media/mediaby{request.user}', exist_ok=True)
                                     os.makedirs(f'Tsukiyomi_doc/repository-{request.user}', exist_ok=True)
 
-                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}', poppler_path=poppler_path)
+                                    pages = convert_from_path(a, dpi=300, output_folder= f'media_upload/media/mediaby{request.user}')
 
                                     #extraction du text de chaque page
                                     for i, page in enumerate(pages):
@@ -2323,13 +2325,9 @@ def get_televerse2(request):
 
 #---------------- VUE QUI REDIRIGE VERS LA METHODE DE TELEVERSEMENT REQUISE EN FONCTION DU TYPE D'ABONNEMENT
 
+@login_required
 def return_type_televerse(request):
-    
     if request.user.state_abonnement == True:
-        
         return redirect('name_televerse_url_paid')
     else:
-        
         return redirect('name_televerse_url_free')
-        
-    

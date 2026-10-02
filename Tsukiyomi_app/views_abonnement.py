@@ -1,10 +1,12 @@
 from django.shortcuts import render
 from django.http import HttpResponseRedirect
+from django.contrib.auth.decorators import login_required
 
 
 #creation des wrapper pour les acces de televersement en fonction de l'etat d'abonnement
 
 def check_abonnement_free(func):
+    @login_required
     def wrapper(request, **kwargs):
         if request.user.state_abonnement == False:
             return func(request, **kwargs)
@@ -16,6 +18,7 @@ def check_abonnement_free(func):
 
 
 def check_abonnement_paid(func):
+    @login_required
     def wrapper(request, **kwargs):
         if request.user.state_abonnement == True:
             return func(request, **kwargs)
