@@ -51,9 +51,9 @@ coverage.xml
 !/Tsukiyomi_doc/test_doc.txt
 /tsukiyomi_doc/
 
-# Export généré par extract_django_source1.py
+# Export généré par extract_django_source.py
 /django_project_source.txt
-extract_django_source1.py
+extract_django_source.py
 
 # Dépendances et sorties Gulp (static/gulp/gulp.json)
 node_modules/

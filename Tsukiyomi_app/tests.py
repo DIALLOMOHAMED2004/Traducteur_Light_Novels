@@ -2,6 +2,7 @@ import os
 from io import BytesIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from django.conf import settings
@@ -17,6 +18,7 @@ from PyPDF2 import PdfWriter
 
 from .forms import DocumentForm, MAX_UPLOAD_SIZE
 from .models import DocFile, Subscriber
+from .usage_policy import FREE_POLICY, PAID_POLICY, get_usage_policy
 
 
 def pdf_upload(pages=1, name='source.pdf'):
@@ -34,6 +36,19 @@ def image_upload(name='source.png', size=(8, 8)):
         buffer, format='JPEG' if name.endswith('.jpg') else 'PNG',
     )
     return SimpleUploadedFile(name, buffer.getvalue(), content_type='image/png')
+
+
+class UsagePolicyTests(SimpleTestCase):
+    def test_current_plan_selects_unchanged_limits(self):
+        user = SimpleNamespace(state_abonnement=False)
+        for paid, expected, limits in [(False, FREE_POLICY, (2, 5, 3)),
+                                       (True, PAID_POLICY, (10, 30, 15)),
+                                       (False, FREE_POLICY, (2, 5, 3))]:
+            with self.subTest(paid=paid):
+                user.state_abonnement = paid
+                policy = get_usage_policy(user)
+                self.assertIs(policy, expected)
+                self.assertEqual((policy.max_pdf, policy.max_pdf_pages, policy.max_images), limits)
 
 
 class DocumentFormTests(SimpleTestCase):
@@ -138,7 +153,7 @@ class UploadTests(TestCase):
     def use_plan(self, paid):
         self.user.state_abonnement = paid
         self.user.save(update_fields=['state_abonnement'])
-        return reverse('name_televerse_url_paid' if paid else 'name_televerse_url_free')
+        return reverse('televerse_url')
 
     def upload(self, paid=False, kind='PDF', pages=1, language='Anglais', file=None):
         self.convert.return_value = [f'page-{i}' for i in range(pages)]
@@ -170,11 +185,18 @@ class UploadTests(TestCase):
             dependency.assert_not_called()
         self.assertFalse((self.root / 'Tsukiyomi_doc').exists())
 
-    def test_plan_routing_and_access(self):
+    def test_common_form_and_legacy_access_restrictions(self):
         for paid in [False, True]:
             with self.subTest(paid=paid):
                 target = self.use_plan(paid)
-                self.assertRedirects(self.client.get(reverse('televerse_url')), target)
+                legacy = reverse('name_televerse_url_paid' if paid else 'name_televerse_url_free')
+                for url in [target, legacy]:
+                    response = self.client.get(url)
+                    self.assertContains(response, '<form ', count=1)
+                    self.assertContains(response, f'action="{target}"')
+                    self.assertContains(response, 'name="csrfmiddlewaretoken"')
+                    self.assertContains(response, 'name="pi-button_televerse"')
+                    self.assertTemplateUsed(response, 'tsukiyomi_app/televerse_page.html')
                 wrong = reverse('name_televerse_url_free' if paid else 'name_televerse_url_paid')
                 for method in ['get', 'post']:
                     response = getattr(self.client, method)(wrong, {
@@ -187,6 +209,33 @@ class UploadTests(TestCase):
         for dependency in [self.convert, self.ocr, self.translator, self.send]:
             dependency.assert_not_called()
         self.assertEqual(DocFile.objects.count(), 0)
+
+    def test_legacy_posts_share_pipeline_and_usage_with_common_route(self):
+        for paid, kind, limit in [(False, 'PDF', 2), (True, 'PDF', 10),
+                                  (False, 'Image', 3), (True, 'Image', 15)]:
+            with self.subTest(paid=paid, kind=kind):
+                DocFile.objects.all().delete()
+                self.use_plan(paid)
+                self.existing_documents(limit - 1, kind)
+                legacy = reverse('name_televerse_url_paid' if paid else 'name_televerse_url_free')
+                self.send.reset_mock()
+                response = self.client.post(legacy, {
+                    'profileType': 'pdf_img', 'pi-type_file': kind,
+                    'pi-type_language': 'Anglais',
+                    'pi-button_televerse': pdf_upload() if kind == 'PDF' else image_upload(),
+                })
+                self.assertContains(response, 'Texte traduit')
+                self.assertEqual(DocFile.objects.count(), limit)
+                self.send.assert_called_once()
+                doc = Document(BytesIO(self.send.call_args.args[0].attachments[0][1]))
+                self.assertIn('Texte traduit', [p.text for p in doc.paragraphs])
+                self.ocr.reset_mock()
+                self.send.reset_mock()
+                response = self.upload(paid, kind)
+                self.assertContains(response, 'Limite de téléversement')
+                self.assertEqual(DocFile.objects.count(), limit)
+                self.ocr.assert_not_called()
+                self.send.assert_not_called()
 
     def test_pdf_and_image_quota_boundaries(self):
         for paid, kind, limit in [(False, 'PDF', 2), (True, 'PDF', 10),

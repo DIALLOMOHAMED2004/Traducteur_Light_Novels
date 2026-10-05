@@ -31,8 +31,7 @@
 
             <div class="col-lg-6 z-index-2 mb-5"><img class="w-100" style="width: 30%; height: 70%; animation: zoomIn 2s ease-in-out forwards;" src="{% static 'assets/img/gallery/tsuki.png' %}" /></div>
             <div class="col-lg-6 z-index-2">
-              {% if user.state_abonnement == True %}
-                <form class="row g-3 rounded" role="form" action="{% url 'name_televerse_url_paid' %}" method="POST" enctype="multipart/form-data" style="background-color: rgb(111, 57, 11); color:aliceblue; border-radius: 15deg;">
+                <form class="row g-3 rounded" role="form" action="{% url 'televerse_url' %}" method="POST" enctype="multipart/form-data" style="background-color: rgb(111, 57, 11); color:aliceblue; border-radius: 15deg;">
                   <div class="col-md-12">
                     {% csrf_token %}
                       {{DocForm.as_p}}
@@ -65,41 +64,6 @@
                   
                   </div>
                 </form>
-              {% elif user.state_abonnement == False %}
-                <form class="row g-3 rounded" role="form" action="{% url 'name_televerse_url_free' %}" method="POST" enctype="multipart/form-data" style="background-color: rgb(111, 57, 11); color:aliceblue; border-radius: 15deg;">
-                  <div class="col-md-12">
-                    {% csrf_token %}
-                      {{DocForm.as_p}}
-                      
-
-                    
-                  </div>
-              
-                  <div class="col-12">
-                    <div class="d-grid">
-                      <input name="profileType"  type="hidden" value="pdf_img"/>
-                      
-                      <button class="btn  rounded-pill" style="border-color: white;background-color: rgb(111, 57, 7); color: white;"  type="submit">Téléverser</button>
-                      
-                      
-                      
-                      <a class="btn rounded-pill" style="border-color: rgb(111, 57, 7);font-size: 100%; background-color: white; color: rgb(111, 57, 7);" href="{% url 'check_table' %}">Obtenez nos offres pour étendre votre utilisation</a>
-                      {% if msg_error_televerse %}
-                        <p style="color: white">{{msg_error_televerse}}</p>
-                        <p style="color: white;">{{msg_error_limite_page_pdf}}</p>
-                      {% endif %}
-
-                      {% if msg_error_extension_file %}
-                          <p style="color: white">{{msg_error_extension_file}}</p>
-
-                      {% endif %}
-                    </div>
-                  </div>
-                  <div class="col-lg-6 z-index-2 mb-5"><img style="width: 60%;"  src="{% static 'assets/img/gallery/car.png' %}" /></div>
-                  
-                  </div>
-                </form>
-              {% endif %}
 
             </div>
             <p style="color:aqua">
