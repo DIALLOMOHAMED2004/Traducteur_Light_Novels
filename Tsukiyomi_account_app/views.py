@@ -66,7 +66,7 @@ def login_view(request):
             if user:
                 login(request, user)
                 print(f"utilisateur : {request.user}")
-                redirect('reindex')
+                return redirect('reindex')
             else:
                 error_msg = "Non correspondance des informations de connexion..."
                 print(f"utilisateur : {request.user}")

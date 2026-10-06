@@ -1,0 +1,83 @@
+# Secrets et configuration locale (conserver le modèle partagé)
+.env
+.env.*
+!.env.example
+
+# Environnements virtuels Python
+venv/
+.venv/
+env/
+.env/
+ENV/
+myenv/
+
+# Fichiers compilés et caches Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+/build/
+/dist/
+
+# Caches des outils de test et d'analyse
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+
+# Journaux et éventuelles bases SQLite de développement
+*.log
+*.log.*
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+
+# Téléversements et images intermédiaires de l'OCR (MEDIA_ROOT)
+# Conserver le fichier vide déjà versionné qui matérialise le dossier.
+/media_upload/*
+!/media_upload/media/
+/media_upload/media/*
+!/media_upload/media/test_upload.txt
+
+# Documents traduits ; le code utilise les deux variantes de casse
+/Tsukiyomi_doc/*
+!/Tsukiyomi_doc/test_doc.txt
+/tsukiyomi_doc/
+
+# Export généré par extract_django_source.py
+/django_project_source.txt
+extract_django_source.py
+
+# Dépendances et sorties Gulp (static/gulp/gulp.json)
+node_modules/
+/static/public/
+/static/build/
+/static/live/
+.sass-cache/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Répertoire habituel de collectstatic, si configuré ultérieurement
+/staticfiles/
+
+# Fichiers locaux des éditeurs et du système
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+._*
+Thumbs.db
+Desktop.ini
+
+# À conserver : migrations Python, templates, docs/, folder_img/,
+# static/assets/, static/vendors/, static/src/ et fichiers de dépendances.

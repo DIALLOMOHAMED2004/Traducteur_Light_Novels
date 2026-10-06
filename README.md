@@ -20,17 +20,17 @@ NB: Python et PostgreSQL doivent être installés
 --> cloner le depot (git clone chemin_vers_depot.git)<br>
 --> ouvrir le dossier du depot (cd depot)<br>
 --> installer les dependances (python -m pip install -r requirements.txt)<br>
+--> copier `.env.example` vers `.env`, remplacer les placeholders, puis charger les variables avec `set -a; source .env; set +a`<br>
 -->demarrer le serveur local (python manage.py runserver )<br>
 --> tester l'application<br>
 
 ## Enjoy :)
 
-<i>NB: n'oubliez pas de modifier et configurer les informations de votre base de donnees dans le fichier de configuration (settings.py)</i>
+<i>NB: les secrets et la configuration locale doivent être fournis par variables d'environnement, sans modifier `settings.py` ni versionner le fichier `.env`.</i>
 
 
 
 <img src="folder_img/tsukiyomi.PNG" alt="logo" widht="400" height="200">
-
 
 
 
