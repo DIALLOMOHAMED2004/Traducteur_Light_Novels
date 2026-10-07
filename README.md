@@ -1,39 +1,47 @@
 # Tsukiyomi003 bY zEnIa
 
-<img src="folder_img/tsuki2.png" alt="logo" widht="200" height="100">
+<img src="folder_img/tsuki2.png" alt="logo" width="200" height="100">
 
+Application Django de traduction de PDF et d'images PNG/JPG vers le français,
+avec génération DOCX et envoi par e-mail.
 
+## Démarrage local avec Docker
 
-<h1>[Application WEB pour la traduction de tes documents , image au format png et jpg ]</h1>
+Prérequis : Docker Engine et Docker Compose v2. Depuis la racine du dépôt,
+copier `.env.example` vers `.env` **si ce fichier n'existe pas déjà**, puis
+remplacer les valeurs d'exemple (clé Django, mot de passe PostgreSQL et SMTP).
+Conserver `DJANGO_DEBUG=True` pour ce serveur de développement en HTTP.
 
-le code source vous est accessible et vous pouvez le tester sans soucis.
-il suffit de cloner ce depot et de preparer votre environnement .
+```bash
+docker compose build
+docker compose up -d db
+# Sur la nouvelle base locale uniquement : appliquer les migrations existantes.
+docker compose run --rm web python manage.py migrate
+docker compose up -d web
+```
 
+Ouvrir <http://localhost:8000/accounts/login/>. PostgreSQL et les documents
+restent dans deux volumes nommés. `docker compose down` arrête les services
+sans supprimer ces volumes. Aucun accès à la base PostgreSQL de l'hôte n'est
+nécessaire. Le code n'est pas monté : reconstruire l'image après une modification.
 
+Pour utiliser une base existante, l'installation Linux et l'image seule,
+consulter [le guide Phase 7](docs/phase7_runtime_portable.md).
 
-## Etape 1 [Cloner le dépot]
-NB: Python et PostgreSQL doivent être installés
+## Tests sans PostgreSQL, Google ni SMTP
 
---> initialiser la base de donnees (initdb -D \usr\local\pgsql\data) puis (pg_ctl -D \usr\local\pgsql\data start) pour lancer le serveur de base de données. <br>
---> création de votre environnement virtuel (python -m virtualenv nom_environnement)<br>
---> activer son environnement ( cd chemin_vers_environnement\scripts) puis (activate.bat)<br>
---> cloner le depot (git clone chemin_vers_depot.git)<br>
---> ouvrir le dossier du depot (cd depot)<br>
---> installer les dependances (python -m pip install -r requirements.txt)<br>
---> copier `.env.example` vers `.env`, remplacer les placeholders, puis charger les variables avec `set -a; source .env; set +a`<br>
--->demarrer le serveur local (python manage.py runserver )<br>
---> tester l'application<br>
+```bash
+docker compose run --rm --no-deps web python manage.py check --settings=Tsukiyomi_project.test_settings
+docker compose run --rm --no-deps web python manage.py test --settings=Tsukiyomi_project.test_settings --noinput --buffer
+docker compose run --rm --no-deps web python manage.py makemigrations --check --dry-run --settings=Tsukiyomi_project.test_settings
+```
 
-## Enjoy :)
+Les tests utilisent SQLite en mémoire et des fichiers temporaires. La base
+applicative reste PostgreSQL. Le serveur Docker fourni est destiné au
+développement local ; il ne constitue pas un déploiement de production.
 
-<i>NB: les secrets et la configuration locale doivent être fournis par variables d'environnement, sans modifier `settings.py` ni versionner le fichier `.env`.</i>
+L'audit, les dépendances Python/système, les variables d'environnement et les
+validations sont détaillés dans [la documentation Phase 7](docs/phase7_runtime_portable.md).
+Les comptes rendus précédents dans `docs/` décrivent l'historique du projet.
 
-
-
-<img src="folder_img/tsukiyomi.PNG" alt="logo" widht="400" height="200">
-
-
-
-
-
-
+<img src="folder_img/tsukiyomi.PNG" alt="application" width="400" height="200">
