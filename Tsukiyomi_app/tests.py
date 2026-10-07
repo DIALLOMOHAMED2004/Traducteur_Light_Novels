@@ -17,7 +17,8 @@ from PIL import Image
 from PyPDF2 import PdfWriter
 
 from .forms import DocumentForm, MAX_UPLOAD_SIZE
-from .models import DocFile, Subscriber
+from .models import DocFile, Subscriber, TranslationJob
+from .services.workspace import workspace_for
 from .usage_policy import FREE_POLICY, PAID_POLICY, get_usage_policy
 
 
@@ -335,7 +336,9 @@ class UploadTests(TestCase):
                 current = DocFile.objects.exclude(pk__in=[doc.pk for doc in old]).get()
                 actual_path = (self.convert.call_args.args[0] if kind == 'PDF'
                                else self.ocr.call_args.args[0].filename)
-                self.assertEqual(actual_path, current.button_televerse.path)
+                job = TranslationJob.objects.get(source=current)
+                self.assertEqual(Path(actual_path).parent, workspace_for(job).source_dir)
+                self.assertEqual(Path(actual_path).read_bytes(), Path(current.button_televerse.path).read_bytes())
                 self.assertEqual(self.send.call_args.args[0].to, [self.user.email])
 
     def test_docx_pages_remain_in_numeric_order_and_exclude_previous_results(self):
@@ -451,7 +454,7 @@ class UploadTests(TestCase):
                 response = self.upload(paid, pages=3)
                 self.assertEqual(response.status_code, 502)
                 self.send.assert_not_called()
-                self.assertFalse(list(self.root.rglob('trad_fusion_*.docx')))
+                self.assertFalse(list(self.root.rglob('output/*.docx')))
 
     def test_poppler_errors_stop_before_ocr(self):
         from pdf2image.exceptions import (PDFInfoNotInstalledError, PDFPageCountError,
