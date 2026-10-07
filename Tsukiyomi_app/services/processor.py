@@ -10,7 +10,8 @@ from .extraction import pdf_page_texts, rasterize_pdf_page, open_image
 from .notification import send_document
 from .ocr import extract_text
 from .rendering import write_docx, merge_docx
-from .translation import translate_text
+from .segmentation import segment_text
+from .translation import TranslationProvider, translate_text, translate_segments
 from .workspace import prepare_source, workspace_for
 
 
@@ -21,7 +22,7 @@ class ProcessingResult:
     output_path: str | None
 
 
-def process_document(job):
+def process_document(job, *, provider: TranslationProvider | None = None):
     """Exécuter une fois un job sauvegardé et tracer son résultat, sans HTTP."""
     job.started_at = timezone.now()
     # La transition conditionnelle empêche deux appels de traiter le même job.
@@ -37,7 +38,9 @@ def process_document(job):
                 raise ValueError('Utilisateur ou langue cible du job incompatible.')
             workspace = workspace_for(job)
             source = prepare_source(job, workspace)
-            result = _process_document(job, source, workspace)
+            result = _process_document(
+                job, source, workspace, translate_text if provider is None else provider,
+            )
     except Exception as error:
         # Ne stocker ni texte source, ni message fournisseur, ni chemin sensible.
         cause = error.__cause__ if isinstance(error, DocumentProcessingError) else None
@@ -59,7 +62,7 @@ def process_document(job):
     return result
 
 
-def _process_document(job, source, workspace):
+def _process_document(job, source, workspace, provider):
     """Orchestrer les services existants dans les seuls dossiers du job."""
     document = job.source
     language = job.source_language
@@ -71,9 +74,10 @@ def _process_document(job, source, workspace):
             if text is None:
                 page = rasterize_pdf_page(source, workspace.working_dir, index + 1)
                 text = extract_text(page, language, is_pdf=True)
-            if text == '' or text is None:
+            segments = segment_text(text or '', page_number=index + 1)
+            if not segments:
                 return ProcessingResult(None, None)
-            translated = translate_text(text, language, is_pdf=True)
+            translated = translate_segments(segments, language, provider=provider, is_pdf=True)
             path = str(workspace.working_dir / f'page_{index:04d}.docx')
             write_docx(translated, path)
             page_paths.append(path)
@@ -83,12 +87,13 @@ def _process_document(job, source, workspace):
     elif document.type_file == 'Image':
         with open_image(source) as image:
             text = extract_text(image, language)
-            if text == '' or text is None:
+            segments = segment_text(text or '')
+            if not segments:
                 return ProcessingResult(None, None)
-            translated = translate_text(text, language)
+            translated = translate_segments(segments, language, provider=provider)
             write_docx(translated, output_path)
             send_document(output_path, document.user.email, language)
     else:
         raise ValueError(f'Type de document non pris en charge : {document.type_file}')
 
-    return ProcessingResult(translated, output_path)
+    return ProcessingResult('\n\n'.join(segment.translated_text for segment in translated), output_path)

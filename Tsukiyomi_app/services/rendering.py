@@ -1,11 +1,21 @@
 from docx import Document
 
 
-def write_docx(text, path):
-    """Créer une page traduite avec le titre historique."""
+def write_docx(segments, path):
+    """Rendre les segments dans l'ordre fourni, avec le titre historique."""
     document = Document()
     document.add_heading('TRADUIT PAR ZENIA')
-    document.add_paragraph(text)
+    for segment in segments:
+        text = segment.translated_text
+        if segment.kind == 'separator':
+            text = segment.source_text
+        elif text is None:
+            raise ValueError('Segment sans traduction.')
+        if segment.kind == 'heading':
+            document.add_heading(text, level=1)
+        else:
+            style = 'Quote' if segment.kind == 'dialogue' else None
+            document.add_paragraph(text, style=style)
     document.save(path)
 
 
