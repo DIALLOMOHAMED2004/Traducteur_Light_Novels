@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from .forms import DocumentForm, SubscribeForm
-from .models import DocFile
-from .services.extraction import count_pdf_pages, cleanup_previous_files
+from .models import DocFile, TranslationJob
+from .services.extraction import count_pdf_pages
 from .services.errors import DocumentProcessingError, document_errors
 from .services.processor import process_document
 from functools import wraps
@@ -87,7 +87,6 @@ def get_televerse(request):
     """Valider l'upload et ses quotas, puis convertir le résultat métier en réponse HTTP."""
     policy = get_usage_policy(request.user)
     form = DocumentForm(prefix="pi")
-    cleanup_previous_files(request.user)
 
     if 'profileType' in request.POST:
         if request.POST['profileType'] != 'pdf_img':
@@ -116,7 +115,10 @@ def get_televerse(request):
 
             # La sauvegarde précède toujours les dépendances externes : un échec consomme le quota.
             document.save()
-            result = process_document(document)
+            job = TranslationJob.objects.create(
+                user=document.user, source=document, source_language=document.type_language,
+            )
+            result = process_document(job)
             text = result.text
             if result.output_path is None:
                 text = "aucun text détecté ..." if file_type == 'PDF' else "aucun texte détecté ..."

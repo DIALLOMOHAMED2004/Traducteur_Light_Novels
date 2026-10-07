@@ -6,18 +6,19 @@ from unittest.mock import patch
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import SimpleTestCase
+from django.test import TestCase
 from docx import Document
 from pytesseract.pytesseract import TesseractError
 
-from .models import DocFile
+from .models import DocFile, TranslationJob
 from .services.errors import DocumentProcessingError
 from .services.processor import process_document
+from .services.workspace import workspace_for
 from .tests import image_upload, pdf_upload
 
 
-class DocumentProcessorTests(SimpleTestCase):
-    """Appeler le pipeline sans HTTP ni accès DB, avec fichiers et DOCX réels."""
+class DocumentProcessorTests(TestCase):
+    """Appeler le pipeline sans HTTP, avec jobs persistants et DOCX réels."""
 
     def setUp(self):
         temporary = TemporaryDirectory(prefix='tsukiyomi-services-')
@@ -29,7 +30,7 @@ class DocumentProcessorTests(SimpleTestCase):
         config = self.settings(MEDIA_ROOT=self.root)
         config.enable()
         self.addCleanup(config.disable)
-        self.user = get_user_model()(username='reader', email='reader@example.test')
+        self.user = get_user_model().objects.create_user(username='reader', email='reader@example.test')
         self.start_patch('socket.socket.connect', side_effect=AssertionError('Réseau interdit'))
         self.start_patch('subprocess.Popen', side_effect=AssertionError('Processus externe interdit'))
         self.convert = self.start_patch('Tsukiyomi_app.services.extraction.convert_from_path', return_value=['page'])
@@ -45,11 +46,12 @@ class DocumentProcessorTests(SimpleTestCase):
         self.addCleanup(patcher.stop)
         return result
 
-    def document(self, kind='PDF', language='Anglais'):
+    def job(self, kind='PDF', language='Anglais'):
         upload = pdf_upload() if kind == 'PDF' else image_upload()
-        (self.root / upload.name).write_bytes(upload.read())
-        return DocFile(user=self.user, type_file=kind, type_language=language,
-                       button_televerse=upload.name)
+        document = DocFile.objects.create(
+            user=self.user, type_file=kind, type_language=language, button_televerse=upload,
+        )
+        return TranslationJob.objects.create(user=self.user, source=document, source_language=language)
 
     def test_all_languages_preserve_external_options_and_docx_without_http(self):
         for kind in ['PDF', 'Image']:
@@ -61,8 +63,8 @@ class DocumentProcessorTests(SimpleTestCase):
                 with self.subTest(kind=kind, language=language):
                     for mock in [self.convert, self.ocr, self.translator, self.send]:
                         mock.reset_mock()
-                    document = self.document(kind, language)
-                    result = process_document(document)
+                    job = self.job(kind, language)
+                    result = process_document(job)
                     self.assertEqual(result.text, 'Traduction')
                     self.assertTrue(Path(result.output_path).is_file())
                     expected_ocr = {'lang': ocr_code}
@@ -73,8 +75,9 @@ class DocumentProcessorTests(SimpleTestCase):
                     options = {} if kind == 'PDF' and language == 'Français' else {'timeout': 10}
                     self.translator.return_value.translate.assert_called_once_with('Source', **options)
                     if kind == 'PDF':
-                        self.convert.assert_called_once_with(document.button_televerse.path, dpi=300,
-                                                             output_folder='media_upload/media/mediabyreader')
+                        workspace = workspace_for(job)
+                        self.convert.assert_called_once_with(str(workspace.source_dir / 'source.pdf'), dpi=300,
+                                                             output_folder=str(workspace.working_dir))
                     else:
                         self.convert.assert_not_called()
                         self.assertIsNone(self.ocr.call_args.args[0].fp)
@@ -93,7 +96,7 @@ class DocumentProcessorTests(SimpleTestCase):
     def test_pdf_result_contains_last_translation_and_all_pages_in_order(self):
         self.convert.return_value = ['page-0', 'page-1', 'page-2']
         self.translator.return_value.translate.side_effect = ['PREMIERE', 'DEUXIEME', 'DERNIERE']
-        result = process_document(self.document())
+        result = process_document(self.job())
         self.assertEqual(result.text, 'DERNIERE')
         doc = Document(result.output_path)
         self.assertEqual([p.text for p in doc.paragraphs if p.text != 'TRADUIT PAR ZENIA'],
@@ -107,25 +110,25 @@ class DocumentProcessorTests(SimpleTestCase):
                 self.ocr.reset_mock()
                 self.translator.reset_mock()
                 self.ocr.side_effect = ['Source', empty, 'Ne doit pas être lu']
-                result = process_document(self.document())
+                result = process_document(self.job())
                 self.assertIsNone(result.text)
                 self.assertIsNone(result.output_path)
                 self.assertEqual(self.ocr.call_count, 2)
                 self.translator.return_value.translate.assert_called_once()
                 self.send.assert_not_called()
-                self.assertFalse(list(self.root.rglob('trad_fusion_*.docx')))
+                self.assertFalse(list(self.root.rglob('output/*.docx')))
 
     def test_later_ocr_failure_preserves_cause_and_stops_before_merge(self):
         error = TesseractError(1, 'failure')
         self.convert.return_value = ['page-0', 'page-1', 'page-2']
         self.ocr.side_effect = ['Source', error, 'Ne doit pas être lu']
         with self.assertRaises(DocumentProcessingError) as caught:
-            process_document(self.document())
+            process_document(self.job())
         self.assertIs(caught.exception.__cause__, error)
         self.assertEqual(self.ocr.call_count, 2)
         self.translator.return_value.translate.assert_called_once()
         self.send.assert_not_called()
-        self.assertFalse(list(self.root.rglob('trad_fusion_*.docx')))
+        self.assertFalse(list(self.root.rglob('output/*.docx')))
 
     def test_image_is_closed_on_expected_and_unexpected_translation_errors(self):
         for error in [OSError('offline'), ValueError('programming error')]:
@@ -133,7 +136,7 @@ class DocumentProcessorTests(SimpleTestCase):
                 self.translator.return_value.translate.side_effect = error
                 expected = DocumentProcessingError if isinstance(error, OSError) else ValueError
                 with self.assertRaises(expected) as caught:
-                    process_document(self.document('Image'))
+                    process_document(self.job('Image'))
                 if expected is DocumentProcessingError:
                     self.assertIs(caught.exception.__cause__, error)
                 else:
@@ -147,6 +150,6 @@ class DocumentProcessorTests(SimpleTestCase):
         for kind in ['PDF', 'Image']:
             with self.subTest(kind=kind), patch('docx.document.Document.save', side_effect=error):
                 with self.assertRaises(DocumentProcessingError) as caught:
-                    process_document(self.document(kind))
+                    process_document(self.job(kind))
                 self.assertIs(caught.exception.__cause__, error)
                 self.send.assert_not_called()
