@@ -157,7 +157,7 @@ class UploadTests(TestCase):
         return reverse('televerse_url')
 
     def upload(self, paid=False, kind='PDF', pages=1, language='Anglais', file=None):
-        self.convert.return_value = [f'page-{i}' for i in range(pages)]
+        self.convert.return_value = ['page']
         return self.client.post(self.use_plan(paid), {
             'profileType': 'pdf_img', 'pi-type_file': kind,
             'pi-type_language': language,

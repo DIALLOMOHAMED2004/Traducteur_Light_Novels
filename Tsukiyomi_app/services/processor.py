@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from ..models import TranslationJob
 from .errors import DocumentProcessingError, document_errors
-from .extraction import pdf_pages, open_image
+from .extraction import pdf_page_texts, rasterize_pdf_page, open_image
 from .notification import send_document
 from .ocr import extract_text
 from .rendering import write_docx, merge_docx
@@ -66,10 +66,11 @@ def _process_document(job, source, workspace):
     output_path = str(workspace.output_dir / 'translation.docx')
 
     if document.type_file == 'PDF':
-        pages = pdf_pages(source, workspace.working_dir)
         page_paths = []
-        for index, page in enumerate(pages):
-            text = extract_text(page, language, is_pdf=True)
+        for index, text in enumerate(pdf_page_texts(source)):
+            if text is None:
+                page = rasterize_pdf_page(source, workspace.working_dir, index + 1)
+                text = extract_text(page, language, is_pdf=True)
             if text == '' or text is None:
                 return ProcessingResult(None, None)
             translated = translate_text(text, language, is_pdf=True)

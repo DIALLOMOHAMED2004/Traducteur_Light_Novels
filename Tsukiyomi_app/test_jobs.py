@@ -47,8 +47,10 @@ class JobTestSetup:
         self.addCleanup(patcher.stop)
         return result
 
-    def rasterize(self, source, *, dpi, output_folder):
-        pages = [Path(output_folder) / f'page_{i:04d}.ppm' for i in range(2)]
+    def rasterize(self, source, *, dpi, output_folder, first_page, last_page, paths_only):
+        self.assertEqual(first_page, last_page)
+        self.assertTrue(paths_only)
+        pages = [Path(output_folder) / f'page_{first_page:04d}.ppm']
         for page in pages:
             page.write_bytes(Path(source).read_bytes())
         return pages
@@ -120,7 +122,7 @@ class TranslationJobTests(JobTestSetup, TestCase):
     def test_expected_failures_record_only_cause_type_and_never_declare_success(self):
         for stage, error in [
             ('prepare_source', OSError('private source path')),
-            ('pdf_pages', OSError('private poppler path')),
+            ('rasterize_pdf_page', OSError('private poppler path')),
             ('extract_text', TesseractError(1, 'private OCR content')),
             ('translate_text', ConnectionError('private provider response')),
             ('write_docx', OSError('private disk path')),

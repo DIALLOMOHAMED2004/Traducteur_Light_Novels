@@ -46,8 +46,8 @@ class DocumentProcessorTests(TestCase):
         self.addCleanup(patcher.stop)
         return result
 
-    def job(self, kind='PDF', language='Anglais'):
-        upload = pdf_upload() if kind == 'PDF' else image_upload()
+    def job(self, kind='PDF', language='Anglais', pages=1):
+        upload = pdf_upload(pages) if kind == 'PDF' else image_upload()
         document = DocFile.objects.create(
             user=self.user, type_file=kind, type_language=language, button_televerse=upload,
         )
@@ -77,7 +77,8 @@ class DocumentProcessorTests(TestCase):
                     if kind == 'PDF':
                         workspace = workspace_for(job)
                         self.convert.assert_called_once_with(str(workspace.source_dir / 'source.pdf'), dpi=300,
-                                                             output_folder=str(workspace.working_dir))
+                                                             output_folder=str(workspace.working_dir),
+                                                             first_page=1, last_page=1, paths_only=True)
                     else:
                         self.convert.assert_not_called()
                         self.assertIsNone(self.ocr.call_args.args[0].fp)
@@ -94,9 +95,9 @@ class DocumentProcessorTests(TestCase):
                     self.assertEqual([p.text for p in doc.paragraphs], ['TRADUIT PAR ZENIA', 'Traduction'])
 
     def test_pdf_result_contains_last_translation_and_all_pages_in_order(self):
-        self.convert.return_value = ['page-0', 'page-1', 'page-2']
+        self.convert.side_effect = [['page-0'], ['page-1'], ['page-2']]
         self.translator.return_value.translate.side_effect = ['PREMIERE', 'DEUXIEME', 'DERNIERE']
-        result = process_document(self.job())
+        result = process_document(self.job(pages=3))
         self.assertEqual(result.text, 'DERNIERE')
         doc = Document(result.output_path)
         self.assertEqual([p.text for p in doc.paragraphs if p.text != 'TRADUIT PAR ZENIA'],
@@ -104,13 +105,12 @@ class DocumentProcessorTests(TestCase):
         self.send.assert_called_once()
 
     def test_empty_later_page_returns_no_final_artifact_or_email(self):
-        self.convert.return_value = ['page-0', 'page-1', 'page-2']
         for empty in ['', None]:
             with self.subTest(empty=empty):
                 self.ocr.reset_mock()
                 self.translator.reset_mock()
                 self.ocr.side_effect = ['Source', empty, 'Ne doit pas être lu']
-                result = process_document(self.job())
+                result = process_document(self.job(pages=3))
                 self.assertIsNone(result.text)
                 self.assertIsNone(result.output_path)
                 self.assertEqual(self.ocr.call_count, 2)
@@ -120,10 +120,9 @@ class DocumentProcessorTests(TestCase):
 
     def test_later_ocr_failure_preserves_cause_and_stops_before_merge(self):
         error = TesseractError(1, 'failure')
-        self.convert.return_value = ['page-0', 'page-1', 'page-2']
         self.ocr.side_effect = ['Source', error, 'Ne doit pas être lu']
         with self.assertRaises(DocumentProcessingError) as caught:
-            process_document(self.job())
+            process_document(self.job(pages=3))
         self.assertIs(caught.exception.__cause__, error)
         self.assertEqual(self.ocr.call_count, 2)
         self.translator.return_value.translate.assert_called_once()
