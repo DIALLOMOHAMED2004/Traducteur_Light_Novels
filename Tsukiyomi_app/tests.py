@@ -137,11 +137,11 @@ class UploadTests(TestCase):
         self.client.force_login(self.user)
         self.start_patch('socket.socket.connect', side_effect=AssertionError('Réseau interdit dans ces tests'))
         self.start_patch('subprocess.Popen', side_effect=AssertionError('Processus externe interdit dans ces tests'))
-        self.convert = self.start_patch('Tsukiyomi_app.views.convert_from_path', return_value=['page'])
-        self.ocr = self.start_patch('pytesseract.image_to_string', return_value='Texte source')
-        self.translator = self.start_patch('Tsukiyomi_app.views.GoogleTranslator')
+        self.convert = self.start_patch('Tsukiyomi_app.services.extraction.convert_from_path', return_value=['page'])
+        self.ocr = self.start_patch('Tsukiyomi_app.services.ocr.pytesseract.image_to_string', return_value='Texte source')
+        self.translator = self.start_patch('Tsukiyomi_app.services.translation.GoogleTranslator')
         self.translator.return_value.translate.return_value = 'Texte traduit'
-        self.send = self.start_patch('django.core.mail.EmailMessage.send', autospec=True, return_value=1)
+        self.send = self.start_patch('Tsukiyomi_app.services.notification.EmailMessage.send', autospec=True, return_value=1)
         self.mass_mail = self.start_patch('Tsukiyomi_app.views.send_mass_mail', return_value=1)
 
     def start_patch(self, target, **kwargs):
