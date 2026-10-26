@@ -40,6 +40,19 @@ Les tests utilisent SQLite en mémoire et des fichiers temporaires. La base
 applicative reste PostgreSQL. Le serveur Docker fourni est destiné au
 développement local ; il ne constitue pas un déploiement de production.
 
+## Intégration continue
+
+Le workflow [CI](.github/workflows/ci.yml) vérifie les pull requests vers
+`develop` et `main`, ainsi que les pushs sur ces deux branches. Sur un runner
+GitHub Ubuntu 24.04 avec Python 3.12, il installe `requirements.lock`, vérifie
+les dépendances et Django, exécute les tests, contrôle les migrations sans
+les modifier, puis construit l'image Docker. Aucun secret applicatif ni accès
+à PostgreSQL n'est nécessaire ; aucune image n'est publiée ou déployée.
+
+Consulter les résultats dans l'onglet **Actions**, workflow **CI**, job
+**Django et Docker**. Les réglages pour rendre ce contrôle obligatoire avant
+fusion et l'état des validations figurent dans [le guide Phase 8](docs/phase8_ci.md).
+
 L'audit, les dépendances Python/système, les variables d'environnement et les
 validations sont détaillés dans [la documentation Phase 7](docs/phase7_runtime_portable.md).
 Les comptes rendus précédents dans `docs/` décrivent l'historique du projet.
